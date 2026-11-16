@@ -1,0 +1,3168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111a17">
+  <title>Lucky Ball — Pool Room</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #f4f0e5;
+      background: #111a17;
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 360px;
+      background:
+        radial-gradient(ellipse at 50% 43%, rgba(32, 71, 52, .26), transparent 60%),
+        linear-gradient(145deg, #18221e, #0d1311 75%);
+    }
+
+    button, input { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+
+    #app {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      width: 100%;
+      height: 100%;
+      min-height: 360px;
+      padding:
+        max(12px, env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        max(12px, env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
+      gap: 8px;
+    }
+
+    .topbar {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(150px, 1fr) auto minmax(150px, 1fr);
+      align-items: center;
+      gap: 18px;
+      min-height: 70px;
+      padding: 0 8px;
+    }
+
+    .brand { min-width: 0; }
+    .kicker {
+      margin-bottom: 3px;
+      color: #d7b76f;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(20px, 2.7vw, 29px);
+      font-weight: 500;
+      letter-spacing: .015em;
+      line-height: 1;
+    }
+    .brand-note {
+      margin-top: 5px;
+      color: #9eaaa0;
+      font-size: 10px;
+      letter-spacing: .02em;
+    }
+
+    .scoreboard {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      gap: 7px;
+    }
+
+    .player-card {
+      min-width: 142px;
+      padding: 8px 11px 7px;
+      border: 1px solid rgba(228, 213, 176, .13);
+      border-radius: 10px;
+      background: rgba(15, 23, 19, .65);
+      transition: border-color .2s, background .2s;
+    }
+
+    .player-card.active {
+      border-color: rgba(222, 188, 111, .55);
+      background: rgba(211, 170, 83, .105);
+      box-shadow: inset 0 0 18px rgba(211, 170, 83, .035);
+    }
+
+    .player-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .player-name {
+      min-width: 0;
+      overflow: hidden;
+      padding: 0;
+      border: 0;
+      border-bottom: 1px dotted rgba(215, 183, 111, .38);
+      color: inherit;
+      background: transparent;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 750;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .player-name:hover:not(:disabled) { color: #f0d48d; }
+    .player-name:disabled { cursor: default; }
+    .turn-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: transparent;
+    }
+    .player-card.active .turn-dot {
+      background: #e6c46f;
+      box-shadow: 0 0 8px rgba(230, 196, 111, .7);
+    }
+    .group-label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 5px;
+      color: #97a49a;
+      font-size: 9px;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+    .ball-tray {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      min-height: 14px;
+      margin-top: 3px;
+      color: #819087;
+      font-size: 8px;
+      letter-spacing: .1em;
+    }
+    .tray-ball {
+      position: relative;
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      flex: 0 0 14px;
+      border: 1px solid rgba(255,255,255,.55);
+      border-radius: 50%;
+      background: var(--ball-color, #252525);
+      box-shadow: 0 1px 3px rgba(0,0,0,.4);
+      color: #171814;
+      font-size: 7px;
+      font-weight: 900;
+      line-height: 12px;
+      text-align: center;
+      text-shadow: 0 0 2px #fff;
+    }
+    .tray-ball.stripe {
+      background: linear-gradient(to bottom, #f8f6ec 0 28%, var(--ball-color) 28% 72%, #f8f6ec 72% 100%);
+    }
+    .tray-ball.gone {
+      opacity: .24;
+      filter: grayscale(1);
+    }
+    .tray-ball.eight {
+      border-color: #b7ad88;
+      color: #fff;
+      background: radial-gradient(circle at 35% 27%, #777 0, #181818 45%, #030303 100%);
+      text-shadow: 0 0 2px #000;
+    }
+
+    .top-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+    .quiet-button {
+      min-height: 34px;
+      padding: 0 10px;
+      border: 1px solid rgba(228, 213, 176, .16);
+      border-radius: 8px;
+      color: #d5d9d2;
+      background: rgba(255,255,255,.035);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      white-space: nowrap;
+    }
+    .quiet-button:hover { border-color: rgba(228, 213, 176, .4); background: rgba(255,255,255,.08); }
+
+    #stage {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      border: 1px solid rgba(228, 213, 176, .055);
+      border-radius: 15px;
+      background:
+        radial-gradient(ellipse at center, rgba(28, 54, 41, .18), transparent 67%),
+        rgba(8, 14, 11, .13);
+    }
+
+    #tableCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      outline: none;
+    }
+
+    .turn-status {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: calc(100% - 24px);
+      padding: 7px 12px;
+      border: 1px solid rgba(228, 213, 176, .12);
+      border-radius: 30px;
+      color: #c9d1c9;
+      background: rgba(13, 20, 16, .76);
+      box-shadow: 0 5px 18px rgba(0,0,0,.13);
+      font-size: 10px;
+      line-height: 1.3;
+      text-align: center;
+      transform: translateX(-50%);
+      pointer-events: none;
+      backdrop-filter: blur(7px);
+    }
+    #ballInHand {
+      display: none;
+      padding: 3px 6px;
+      border-radius: 10px;
+      color: #17180f;
+      background: #dfbd72;
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      white-space: nowrap;
+    }
+    #ballInHand.visible { display: inline-block; }
+
+    .power-side {
+      position: absolute;
+      z-index: 1;
+      top: 50%;
+      left: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 36px;
+      padding: 10px 5px;
+      border: 1px solid rgba(228, 213, 176, .15);
+      border-radius: 18px;
+      background: rgba(13, 20, 16, .78);
+      box-shadow: 0 6px 20px rgba(0,0,0,.18);
+      transform: translateY(-50%);
+      backdrop-filter: blur(7px);
+    }
+    .spin-control {
+      position: absolute;
+      z-index: 1;
+      top: 50%;
+      right: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 8px 7px;
+      border: 1px solid rgba(228, 213, 176, .15);
+      border-radius: 14px;
+      background: rgba(13, 20, 16, .78);
+      box-shadow: 0 6px 20px rgba(0,0,0,.18);
+      transform: translateY(-50%);
+      backdrop-filter: blur(7px);
+      touch-action: none;
+    }
+    .spin-control label {
+      color: #d9c58f;
+      font-size: 7px;
+      font-weight: 850;
+      letter-spacing: .1em;
+    }
+    #spinPad {
+      position: relative;
+      width: 62px;
+      height: 62px;
+      border: 2px solid rgba(255,255,255,.82);
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 26%, #fff, #d9ddd5 68%, #8c938a);
+      box-shadow: inset 0 2px 5px rgba(0,0,0,.22), 0 2px 6px rgba(0,0,0,.35);
+      cursor: crosshair;
+      touch-action: none;
+    }
+    #spinPad::before, #spinPad::after {
+      position: absolute;
+      content: "";
+      background: rgba(67,73,65,.2);
+      pointer-events: none;
+    }
+    #spinPad::before { top: 50%; left: 10%; width: 80%; height: 1px; }
+    #spinPad::after { top: 10%; left: 50%; width: 1px; height: 80%; }
+    #spinDot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 11px;
+      height: 11px;
+      border: 1px solid rgba(113,28,25,.75);
+      border-radius: 50%;
+      background: #d74b43;
+      box-shadow: 0 1px 3px rgba(0,0,0,.48);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .spin-hint {
+      color: #aab6ab;
+      font-size: 6px;
+      font-weight: 700;
+      letter-spacing: .06em;
+    }
+    .power-side label {
+      color: #d9c58f;
+      font-size: 7px;
+      font-weight: 850;
+      letter-spacing: .1em;
+      writing-mode: vertical-rl;
+    }
+    #powerSlider {
+      width: 12px;
+      height: 116px;
+      margin: 0;
+      border-radius: 8px;
+      outline: none;
+      appearance: none;
+      background: linear-gradient(to top, #df514c 0%, #e7c24e 52%, #61b86c 100%);
+      cursor: pointer;
+      writing-mode: vertical-lr;
+      direction: rtl;
+      touch-action: none;
+    }
+    #powerSlider::-webkit-slider-thumb {
+      width: 19px;
+      height: 19px;
+      border: 2px solid #fff3cc;
+      border-radius: 50%;
+      appearance: none;
+      background: #dfbd72;
+      box-shadow: 0 2px 6px rgba(0,0,0,.5);
+    }
+    #powerSlider::-moz-range-thumb {
+      width: 15px;
+      height: 15px;
+      border: 2px solid #fff3cc;
+      border-radius: 50%;
+      background: #dfbd72;
+      box-shadow: 0 2px 6px rgba(0,0,0,.5);
+    }
+    #powerValue {
+      color: #f0dfb0;
+      font-size: 8px;
+      font-variant-numeric: tabular-nums;
+      font-weight: 750;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: minmax(125px, 1fr) minmax(170px, 280px) auto;
+      align-items: center;
+      gap: 14px;
+      min-height: 79px;
+      padding: 5px 8px 0;
+    }
+
+    .control-help { min-width: 0; }
+    .help-title {
+      color: #e4d3a9;
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: .06em;
+    }
+    .help-copy {
+      margin-top: 4px;
+      color: #97a49a;
+      font-size: 9px;
+      line-height: 1.45;
+    }
+    .return-tray {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      min-height: 19px;
+      width: fit-content;
+      max-width: 100%;
+      margin-top: 4px;
+      padding: 2px 6px;
+      overflow: hidden;
+      border: 1px solid rgba(220, 181, 120, .25);
+      border-radius: 5px;
+      background: linear-gradient(180deg, #553521, #302016);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,.4);
+    }
+    .return-tray-label {
+      flex: 0 0 auto;
+      margin-right: 2px;
+      color: #d7bc8c;
+      font-size: 6px;
+      font-weight: 850;
+      letter-spacing: .08em;
+    }
+    .return-ball {
+      display: inline-grid;
+      width: 13px;
+      height: 13px;
+      flex: 0 0 13px;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.55);
+      border-radius: 50%;
+      color: #171814;
+      font-size: 6px;
+      font-weight: 900;
+      text-shadow: 0 0 2px #fff;
+      animation: tray-arrive .32s ease-out both;
+    }
+    .return-ball.stripe {
+      background: linear-gradient(to bottom, #f8f6ec 0 27%, var(--ball-color) 27% 73%, #f8f6ec 73% 100%);
+    }
+    .return-ball:not(.stripe) { background: var(--ball-color); }
+    .return-ball.eight { color: #fff; background: #141414; }
+    @keyframes tray-arrive {
+      from { transform: translateX(12px) scale(.5); opacity: .2; }
+      to { transform: translateX(0) scale(1); opacity: 1; }
+    }
+
+    .power-control { min-width: 0; }
+    .power-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 7px;
+      color: #b8c2b9;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+    .power-track {
+      height: 7px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 10px;
+      background: #242d27;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,.48);
+    }
+    #powerFill {
+      width: 45%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #df514c 0%, #e7c24e 52%, #61b86c 100%);
+      box-shadow: 0 0 9px rgba(220, 181, 91, .25);
+      transition: width .08s linear;
+    }
+    .action-button {
+      min-width: 105px;
+      min-height: 40px;
+      padding: 0 15px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 9px;
+      color: #e8e4d8;
+      background: rgba(255,255,255,.05);
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .12em;
+      cursor: pointer;
+      transition: transform .12s, background .15s, opacity .15s;
+    }
+    .action-button:hover:not(:disabled) { transform: translateY(-1px); background: rgba(255,255,255,.1); }
+    .action-button:disabled { opacity: .43; cursor: default; }
+    .modal {
+      position: fixed;
+      z-index: 5;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(5, 10, 7, .76);
+      backdrop-filter: blur(9px);
+    }
+    .modal[aria-hidden="true"] { display: none; }
+    .modal-card {
+      width: min(390px, 100%);
+      padding: 30px 28px 26px;
+      border: 1px solid rgba(226, 198, 129, .34);
+      border-radius: 17px;
+      background:
+        radial-gradient(ellipse at 50% 0, rgba(91, 123, 80, .22), transparent 62%),
+        #141d18;
+      box-shadow: 0 25px 90px rgba(0,0,0,.52);
+      text-align: center;
+    }
+    .modal-card h2 {
+      margin: 11px 0 7px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 34px;
+      font-weight: 500;
+    }
+    .modal-card p {
+      margin: 0 0 22px;
+      color: #aab6ab;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .modal-card .action-button { min-width: 150px; }
+    .network-card { width: min(430px, 100%); }
+    .network-card > .action-button { width: 100%; }
+    .join-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .name-card { width: min(430px, 100%); }
+    .name-fields {
+      display: grid;
+      gap: 12px;
+      margin: 18px 0;
+      text-align: left;
+    }
+    .name-entry { display: grid; gap: 6px; }
+    .name-entry span {
+      color: #d9c58f;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .name-entry input {
+      width: 100%;
+      min-width: 0;
+      padding: 10px 12px;
+      border: 1px solid rgba(228, 213, 176, .2);
+      border-radius: 9px;
+      outline: none;
+      color: #f1e7cc;
+      background: rgba(0,0,0,.2);
+      font-size: 13px;
+    }
+    .name-entry input:focus { border-color: rgba(230, 196, 111, .7); }
+    .name-entry input:disabled { opacity: .48; }
+    #roomCodeInput {
+      width: 100%;
+      min-width: 0;
+      padding: 0 12px;
+      border: 1px solid rgba(228, 213, 176, .2);
+      border-radius: 9px;
+      outline: none;
+      color: #f1e7cc;
+      background: rgba(0,0,0,.2);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    #roomCodeInput:focus { border-color: rgba(230, 196, 111, .7); }
+    .room-share {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 14px;
+      padding: 11px 12px;
+      border: 1px solid rgba(230, 196, 111, .25);
+      border-radius: 10px;
+      background: rgba(230, 196, 111, .07);
+    }
+    .room-share span { color: #aab6ab; font-size: 8px; font-weight: 800; letter-spacing: .13em; }
+    .room-share strong { color: #f0d48d; font-size: 19px; letter-spacing: .16em; }
+    .network-status {
+      min-height: 34px;
+      margin-top: 13px;
+      color: #aab6ab;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .network-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 760px) {
+      #app { padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right)); gap: 5px; }
+      .topbar {
+        grid-template-columns: minmax(82px, 1fr) auto minmax(82px, 1fr);
+        gap: 5px;
+        min-height: 59px;
+        padding: 0 3px;
+      }
+      .kicker { font-size: 7px; letter-spacing: .15em; }
+      h1 { font-size: 19px; }
+      .brand-note { display: none; }
+      .scoreboard { gap: 4px; }
+      .player-card { min-width: 82px; padding: 7px 7px 6px; }
+      .player-name { font-size: 9px; }
+      .group-label { gap: 3px; margin-top: 4px; font-size: 7px; letter-spacing: .03em; }
+      .ball-tray { gap: 1px; min-height: 10px; margin-top: 2px; }
+      .tray-ball { width: 10px; height: 10px; flex-basis: 10px; font-size: 5px; line-height: 9px; }
+      .top-actions { flex-direction: column; gap: 4px; }
+      .quiet-button { min-height: 25px; padding: 0 6px; font-size: 8px; }
+      #stage { border-radius: 11px; }
+      .turn-status { top: 8px; padding: 6px 9px; font-size: 9px; }
+      .power-side { left: 4px; gap: 6px; width: 28px; padding: 8px 3px; }
+      #powerSlider { height: 82px; width: 10px; }
+      #powerSlider::-webkit-slider-thumb { width: 16px; height: 16px; }
+      #powerSlider::-moz-range-thumb { width: 12px; height: 12px; }
+      #powerValue { font-size: 7px; }
+      .spin-control { right: 4px; gap: 4px; padding: 6px 5px; }
+      #spinPad { width: 48px; height: 48px; }
+      #spinDot { width: 9px; height: 9px; }
+      .spin-hint { font-size: 5px; }
+      .controls {
+        grid-template-columns: 1fr 1.25fr auto;
+        grid-template-rows: auto auto;
+        gap: 5px 9px;
+        min-height: 88px;
+        padding: 3px 2px 0;
+      }
+      .control-help { grid-column: 1 / 3; grid-row: 1; }
+      .help-title { font-size: 9px; }
+      .help-copy { margin-top: 2px; font-size: 8px; }
+      .power-control { grid-column: 1 / 3; grid-row: 2; }
+      .power-label { margin-bottom: 4px; font-size: 8px; }
+      .power-label { margin-bottom: 6px; }
+      .action-button { grid-column: 3; min-width: 78px; min-height: 34px; padding: 0 8px; font-size: 8px; }
+      #newGameButton { grid-row: 1 / span 2; }
+    }
+
+    @media (max-width: 380px) {
+      .player-card { min-width: 72px; }
+      .topbar { grid-template-columns: minmax(70px, 1fr) auto minmax(70px, 1fr); }
+      .quiet-button { font-size: 7px; }
+      .action-button { min-width: 69px; }
+    }
+  </style>
+</head>
+<body>
+  <main id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="kicker">The Corner Pocket</div>
+        <h1>Lucky Ball</h1>
+        <div class="brand-note">A little friendly competition</div>
+      </div>
+
+      <section class="scoreboard" aria-label="Scoreboard">
+        <div class="player-card active" id="playerCard0">
+          <div class="player-top"><button class="player-name" id="playerName0" type="button" title="Click to rename">Player 1</button><i class="turn-dot"></i></div>
+          <div class="group-label" id="groupText0">Open table</div>
+          <div class="ball-tray" id="ballTray0" aria-label="Player 1 balls"></div>
+        </div>
+        <div class="player-card" id="playerCard1">
+          <div class="player-top"><button class="player-name" id="playerName1" type="button" title="Click to rename">Player 2</button><i class="turn-dot"></i></div>
+          <div class="group-label" id="groupText1">Open table</div>
+          <div class="ball-tray" id="ballTray1" aria-label="Player 2 balls"></div>
+        </div>
+      </section>
+
+      <div class="top-actions">
+        <button class="quiet-button" id="modeButton" type="button" aria-label="Toggle game mode">Mode: 2 Players</button>
+        <button class="quiet-button" id="onlineButton" type="button">Play Online</button>
+        <button class="quiet-button" id="muteButton" type="button" aria-label="Mute sounds">Sound: On</button>
+      </div>
+    </header>
+
+    <section id="stage" aria-label="Pool table">
+      <canvas id="tableCanvas" tabindex="0" aria-label="Eight ball pool table. Aim and drag back from the cue ball to shoot."></canvas>
+      <aside class="power-side" aria-label="Shot power control">
+        <label for="powerSlider">POWER</label>
+        <input id="powerSlider" type="range" min="0" max="100" value="45" aria-label="Shot power">
+        <span id="powerValue">45%</span>
+      </aside>
+      <aside class="spin-control" aria-label="Cue ball spin control">
+        <label for="spinPad">CUE SPIN</label>
+        <div id="spinPad" role="group" tabindex="0" aria-label="Cue ball spin control. Arrow keys adjust follow, draw, and side spin.">
+          <span id="spinDot"></span>
+        </div>
+        <span class="spin-hint" id="spinHint">FOLLOW / DRAW</span>
+      </aside>
+      <div class="turn-status" aria-live="polite">
+        <span id="ballInHand">BALL IN HAND</span>
+        <span id="statusText">Aim with your pointer, then pull back from the cue ball.</span>
+      </div>
+    </section>
+
+    <footer class="controls">
+      <div class="control-help">
+        <div class="help-title" id="helpTitle">Aim, pull back, release</div>
+        <div class="help-copy" id="helpCopy">Drag back for power. Use ←/→ for 0.1° aim; drag the spin dot for follow or draw.</div>
+        <div class="return-tray" id="returnTray" aria-label="Pocketed balls">
+          <span class="return-tray-label">BALL RETURN</span>
+        </div>
+      </div>
+      <div class="power-control">
+        <div class="power-label"><span>Shot power</span><span>POWER PULL</span></div>
+        <div class="power-track" aria-hidden="true"><div id="powerFill"></div></div>
+      </div>
+      <button class="action-button" id="newGameButton" type="button">NEW GAME</button>
+    </footer>
+  </main>
+
+  <div class="modal" id="gameOverModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
+    <div class="modal-card">
+      <div class="kicker">The Corner Pocket</div>
+      <h2 id="modalTitle">Game over</h2>
+      <p id="modalCopy">A great game.</p>
+      <button class="action-button" id="playAgainButton" type="button">PLAY AGAIN</button>
+    </div>
+  </div>
+
+  <div class="modal" id="namesModal" role="dialog" aria-modal="true" aria-labelledby="namesTitle" aria-hidden="true">
+    <section class="modal-card name-card">
+      <div class="kicker">The Corner Pocket</div>
+      <h2 id="namesTitle">Player names</h2>
+      <p>Choose a name for each player. Names are saved on this device.</p>
+      <form id="namesForm">
+        <div class="name-fields">
+          <label class="name-entry" for="playerNameInput0">
+            <span>Player 1</span>
+            <input id="playerNameInput0" type="text" maxlength="18" autocomplete="off" required>
+          </label>
+          <label class="name-entry" for="playerNameInput1">
+            <span>Player 2</span>
+            <input id="playerNameInput1" type="text" maxlength="18" autocomplete="off" required>
+          </label>
+        </div>
+        <div class="network-footer">
+          <button class="quiet-button" id="cancelNamesButton" type="button">CANCEL</button>
+          <button class="action-button" type="submit">SAVE NAMES</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal" id="networkModal" role="dialog" aria-modal="true" aria-labelledby="networkTitle" aria-hidden="true">
+    <section class="modal-card network-card">
+      <div class="kicker">Free peer-to-peer</div>
+      <h2 id="networkTitle">Play with a friend</h2>
+      <p>Host a room, then share its code. Your friend opens this same game and joins.</p>
+      <button class="action-button" id="hostOnlineButton" type="button">CREATE ROOM</button>
+      <div class="join-row">
+        <input id="roomCodeInput" type="text" maxlength="7" autocomplete="off" spellcheck="false" placeholder="ROOM CODE" aria-label="Room code">
+        <button class="action-button" id="joinOnlineButton" type="button">JOIN</button>
+      </div>
+      <div class="room-share" id="roomShare" hidden>
+        <span>ROOM CODE</span>
+        <strong id="roomCodeText"></strong>
+        <button class="quiet-button" id="copyRoomButton" type="button">COPY</button>
+      </div>
+      <div class="network-status" id="networkStatus" role="status">Both players need an internet connection to connect.</div>
+      <div class="network-footer">
+        <button class="quiet-button" id="disconnectOnlineButton" type="button" hidden>LEAVE ROOM</button>
+        <button class="quiet-button" id="closeNetworkButton" type="button">CLOSE</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const canvas = document.querySelector("#tableCanvas");
+      const ctx = canvas.getContext("2d", { alpha: true });
+      const stage = document.querySelector("#stage");
+      const statusText = document.querySelector("#statusText");
+      const handBadge = document.querySelector("#ballInHand");
+      const powerSlider = document.querySelector("#powerSlider");
+      const powerValue = document.querySelector("#powerValue");
+      const powerFill = document.querySelector("#powerFill");
+      const spinPad = document.querySelector("#spinPad");
+      const spinDot = document.querySelector("#spinDot");
+      const spinHint = document.querySelector("#spinHint");
+      const modeButton = document.querySelector("#modeButton");
+      const onlineButton = document.querySelector("#onlineButton");
+      const muteButton = document.querySelector("#muteButton");
+      const helpTitle = document.querySelector("#helpTitle");
+      const helpCopy = document.querySelector("#helpCopy");
+      const gameOverModal = document.querySelector("#gameOverModal");
+      const modalTitle = document.querySelector("#modalTitle");
+      const modalCopy = document.querySelector("#modalCopy");
+      const namesModal = document.querySelector("#namesModal");
+      const namesForm = document.querySelector("#namesForm");
+      const nameInputs = [document.querySelector("#playerNameInput0"), document.querySelector("#playerNameInput1")];
+      const networkModal = document.querySelector("#networkModal");
+      const networkStatus = document.querySelector("#networkStatus");
+      const roomCodeInput = document.querySelector("#roomCodeInput");
+      const roomShare = document.querySelector("#roomShare");
+      const roomCodeText = document.querySelector("#roomCodeText");
+      const hostOnlineButton = document.querySelector("#hostOnlineButton");
+      const joinOnlineButton = document.querySelector("#joinOnlineButton");
+      const disconnectOnlineButton = document.querySelector("#disconnectOnlineButton");
+      const newGameButton = document.querySelector("#newGameButton");
+
+      const COLORS = {
+        1: "#e5b92e", 2: "#2868b5", 3: "#d43d32", 4: "#693c91",
+        5: "#e7792c", 6: "#328249", 7: "#7c3030", 8: "#141414",
+        9: "#e5b92e", 10: "#2868b5", 11: "#d43d32", 12: "#693c91",
+        13: "#e7792c", 14: "#328249", 15: "#7c3030"
+      };
+      const DEFAULT_PLAYER_NAMES = ["Player 1", "Player 2"];
+      const PLAYER_NAMES_KEY = "cornerPocket.playerNames";
+
+      const table = {
+        x: 0, y: 0, width: 0, height: 0, rail: 0, radius: 0,
+        left: 0, right: 0, top: 0, bottom: 0, headString: 0, footSpotX: 0,
+        pockets: [], jaws: []
+      };
+
+      let balls = [];
+      let cueBall = null;
+      let groups = [null, null];
+      let currentPlayer = 0;
+      let gameMode = "local";
+      let gameOver = false;
+      let breakShot = true;
+      let ballsMoving = false;
+      let ballInHand = null;
+      let shotPots = [];
+      let firstContact = null;
+      let shotGroupRemaining = 0;
+      let railAfterContact = false;
+      let cueScratch = false;
+      let aim = { x: 1, y: 0 };
+      let displayAim = { x: 1, y: 0 };
+      let power = 0.45;
+      let cueSpin = { x: 0, y: 0 };
+      let cueStrike = null;
+      let returnTraySignature = null;
+      let playerNames = loadPlayerNames();
+      let onlineNames = playerNames.slice();
+      let stroke = null;
+      let placement = null;
+      let pointer = { x: 0, y: 0 };
+      let aiTimer = 0;
+      let accumulator = 0;
+      let previousTime = 0;
+      let lastSoundTime = 0;
+      let audioContext = null;
+      let muted = false;
+      let dpr = 1;
+      let deviceSize = { width: 0, height: 0 };
+      let feltPattern = null;
+      let networkRole = null;
+      let localPlayer = null;
+      let previousGameMode = "local";
+      let peerInstance = null;
+      let remoteConnection = null;
+      let remoteConnected = false;
+      let roomCode = "";
+      let peerLibraryPromise = null;
+      let lastNetworkSync = 0;
+      let disconnecting = false;
+      let gameResult = null;
+      let appliedRemoteResult = null;
+
+      const STEP = 1 / 120; // Fixed substeps prevent fast shots from tunneling through the rack.
+      const RESTITUTION = 0.965;
+      const ROLLING_FRICTION = 145;
+      const STOP_SPEED = 3.2;
+
+      function normalizePlayerName(value, index) {
+        if (typeof value !== "string") return DEFAULT_PLAYER_NAMES[index];
+        return value.trim().replace(/\s+/g, " ").slice(0, 18).trim() || DEFAULT_PLAYER_NAMES[index];
+      }
+
+      function loadPlayerNames() {
+        try {
+          const stored = window.localStorage.getItem(PLAYER_NAMES_KEY);
+          const saved = stored ? JSON.parse(stored) : DEFAULT_PLAYER_NAMES;
+          if (!Array.isArray(saved)) return DEFAULT_PLAYER_NAMES.slice();
+          return DEFAULT_PLAYER_NAMES.map((name, index) => normalizePlayerName(saved[index], index));
+        } catch (error) {
+          console.warn("Could not load saved player names.", error);
+          return DEFAULT_PLAYER_NAMES.slice();
+        }
+      }
+
+      function savePlayerNames() {
+        try {
+          window.localStorage.setItem(PLAYER_NAMES_KEY, JSON.stringify(playerNames));
+        } catch (error) {
+          console.warn("Could not save player names.", error);
+        }
+      }
+
+      function openNamesModal() {
+        for (let i = 0; i < nameInputs.length; i++) {
+          const isComputer = !networkRole && gameMode === "ai" && i === 1;
+          nameInputs[i].value = isComputer ? "Computer" : networkRole ? onlineNames[i] : playerNames[i];
+          nameInputs[i].disabled = isComputer || (!!networkRole && i !== localPlayer);
+          nameInputs[i].setCustomValidity("");
+        }
+        namesModal.setAttribute("aria-hidden", "false");
+        nameInputs[networkRole ? localPlayer : 0].focus({ preventScroll: true });
+      }
+
+      function closeNamesModal() {
+        namesModal.setAttribute("aria-hidden", "true");
+      }
+
+      function saveNameEdits(event) {
+        event.preventDefault();
+        for (const input of nameInputs) {
+          if (!input.disabled && !input.value.trim()) {
+            input.setCustomValidity("Please enter a name.");
+            input.reportValidity();
+            return;
+          }
+        }
+        for (let i = 0; i < nameInputs.length; i++) {
+          if (nameInputs[i].disabled) continue;
+          const name = normalizePlayerName(nameInputs[i].value, i);
+          playerNames[i] = name;
+          onlineNames[i] = name;
+        }
+        savePlayerNames();
+        closeNamesModal();
+        updateScoreboard();
+        if (networkRole === "guest") sendNetworkMessage({ type: "name", name: onlineNames[1] });
+        else if (networkRole === "host") sendNetworkState(true);
+      }
+
+      function currentName(index) {
+        if (networkRole) return onlineNames[index] || playerNames[index];
+        if (index === 1 && gameMode === "ai") return "Computer";
+        return playerNames[index];
+      }
+
+      function playerLabel(index) {
+        return currentName(index);
+      }
+
+      function isAiTurn() {
+        return gameMode === "ai" && currentPlayer === 1;
+      }
+
+      function canLocalAct() {
+        if (networkRole) return currentPlayer === localPlayer;
+        return !isAiTurn();
+      }
+
+      function groupFor(number) {
+        if (number >= 1 && number <= 7) return "solids";
+        if (number >= 9 && number <= 15) return "stripes";
+        return null;
+      }
+
+      function updateScoreboard() {
+        for (let i = 0; i < 2; i++) {
+          const nameButton = document.querySelector(`#playerName${i}`);
+          const name = playerLabel(i);
+          nameButton.textContent = name;
+          nameButton.disabled = !!networkRole && i !== localPlayer;
+          nameButton.title = nameButton.disabled ? name : `Click to rename ${name}`;
+          nameButton.setAttribute("aria-label", nameButton.disabled ? name : `Rename ${name}`);
+          document.querySelector(`#playerCard${i}`).classList.toggle("active", !gameOver && i === currentPlayer);
+          const group = groups[i];
+          const label = document.querySelector(`#groupText${i}`);
+          label.textContent = group ? (group === "solids" ? "Solids" : "Stripes") : "Open table";
+          const tray = document.querySelector(`#ballTray${i}`);
+          tray.replaceChildren();
+          if (group) {
+            const first = group === "solids" ? 1 : 9;
+            const left = countRemaining(group);
+            if (left === 0 && currentPlayer === i) {
+              const eight = document.createElement("span");
+              eight.className = "tray-ball eight";
+              eight.textContent = "8";
+              eight.title = "8-ball for the win";
+              tray.append(eight);
+            } else {
+              for (let number = first; number < first + 7; number++) {
+                const icon = document.createElement("span");
+                icon.className = `tray-ball${group === "stripes" ? " stripe" : ""}`;
+                icon.classList.toggle("gone", !balls.some(ball => ball.inPlay && ball.number === number));
+                icon.style.setProperty("--ball-color", COLORS[number]);
+                icon.textContent = String(number);
+                icon.title = `Ball ${number}`;
+                tray.append(icon);
+              }
+            }
+          }
+        }
+        handBadge.classList.toggle("visible", !!ballInHand);
+        modeButton.textContent = gameMode === "network" ? "Mode: Online" : gameMode === "local" ? "Mode: 2 Players" : "Mode: vs Computer";
+        modeButton.disabled = !!networkRole;
+        newGameButton.disabled = networkRole === "guest";
+        onlineButton.textContent = networkRole ? (remoteConnected ? "Online: Connected" : "Online: Waiting") : "Play Online";
+        disconnectOnlineButton.hidden = !networkRole;
+        muteButton.textContent = muted ? "Sound: Off" : "Sound: On";
+        muteButton.setAttribute("aria-label", muted ? "Unmute sounds" : "Mute sounds");
+      }
+
+      function renderReturnTray() {
+        const pocketed = balls.filter(ball => ball.sunk && !ball.isCue);
+        const signature = pocketed.map(ball => ball.number).join(",");
+        if (signature === returnTraySignature) return;
+        returnTraySignature = signature;
+        const tray = document.querySelector("#returnTray");
+        tray.replaceChildren();
+        const label = document.createElement("span");
+        label.className = "return-tray-label";
+        label.textContent = "BALL RETURN";
+        tray.append(label);
+        for (const ball of pocketed) {
+          const icon = document.createElement("span");
+          icon.className = `return-ball${ball.number >= 9 && ball.number <= 15 ? " stripe" : ""}${ball.number === 8 ? " eight" : ""}`;
+          if (ball.number !== 8) icon.style.setProperty("--ball-color", COLORS[ball.number]);
+          icon.textContent = String(ball.number);
+          icon.title = `Ball ${ball.number}`;
+          tray.append(icon);
+        }
+      }
+
+      function showGameOver(winner, won, localWinner) {
+        modalTitle.textContent = won ? `${winner} wins!` : `${winner} wins`;
+        modalCopy.textContent = won
+          ? "The 8-ball is down. Nicely played."
+          : "The 8-ball was pocketed illegally. Start another rack and try again.";
+        gameOverModal.setAttribute("aria-hidden", "false");
+        document.querySelector("#playAgainButton").focus({ preventScroll: true });
+        playSound(localWinner === undefined ? (won ? "win" : "loss") : (localWinner ? "win" : "loss"), .8);
+      }
+
+      function hideGameOver() {
+        gameOverModal.setAttribute("aria-hidden", "true");
+      }
+
+      function setStatus(text, title, copy) {
+        statusText.textContent = text;
+        if (title) helpTitle.textContent = title;
+        if (copy) helpCopy.textContent = copy;
+      }
+
+      function setNetworkStatus(message) {
+        networkStatus.textContent = message;
+      }
+
+      function loadPeerLibrary() {
+        if (window.Peer) return Promise.resolve(window.Peer);
+        if (peerLibraryPromise) return peerLibraryPromise;
+        peerLibraryPromise = new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js";
+          script.async = true;
+          script.onload = () => {
+            if (window.Peer) resolve(window.Peer);
+            else {
+              peerLibraryPromise = null;
+              reject(new Error("PeerJS could not be initialized."));
+            }
+          };
+          script.onerror = () => {
+            peerLibraryPromise = null;
+            reject(new Error("Could not load the free connection library. Check your internet and try again."));
+          };
+          document.head.append(script);
+        });
+        return peerLibraryPromise;
+      }
+
+      function makeRoomCode() {
+        const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        const values = new Uint32Array(7);
+        crypto.getRandomValues(values);
+        return Array.from(values, value => alphabet[value % alphabet.length]).join("");
+      }
+
+      function normalizeRoomCode(value) {
+        return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 7);
+      }
+
+      function roomPeerId(code) {
+        return `corner-pocket-${code.toLowerCase()}`;
+      }
+
+      function openNetworkModal() {
+        if (networkRole && roomCode) {
+          roomShare.hidden = networkRole !== "host";
+          roomCodeText.textContent = roomCode;
+          setNetworkStatus(remoteConnected
+            ? "Connected. The host controls the game; your friend can shoot on their turn."
+            : networkRole === "host" ? "Room is ready. Share the code with one friend."
+              : "Connecting to the host...");
+        }
+        networkModal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeNetworkModal() {
+        networkModal.setAttribute("aria-hidden", "true");
+      }
+
+      function serializeNetworkState() {
+        const width = Math.max(1, table.right - table.left);
+        const height = Math.max(1, table.bottom - table.top);
+        const position = (x, y) => ({
+          x: (x - table.left) / width,
+          y: (y - table.top) / height
+        });
+        return {
+          playerNames: onlineNames.slice(),
+          balls: balls.map(ball => {
+            const point = position(ball.x, ball.y);
+            const pocketing = ball.pocketing ? {
+              from: position(ball.pocketing.fromX, ball.pocketing.fromY),
+              to: position(ball.pocketing.x, ball.pocketing.y),
+              t: ball.pocketing.t
+            } : null;
+            return {
+              number: ball.number,
+              x: point.x,
+              y: point.y,
+              vx: ball.vx / width,
+              vy: ball.vy / height,
+              angle: ball.angle,
+              spinX: ball.spinX,
+              spinY: ball.spinY,
+              inPlay: ball.inPlay,
+              sunk: ball.sunk,
+              pocketing
+            };
+          }),
+          groups: groups.slice(),
+          currentPlayer,
+          gameOver,
+          gameResult,
+          breakShot,
+          ballsMoving,
+          ballInHand: ballInHand ? { ...ballInHand } : null,
+          shotPots: shotPots.slice(),
+          firstContact,
+          shotGroupRemaining,
+          railAfterContact,
+          cueScratch,
+          status: statusText.textContent,
+          helpTitle: helpTitle.textContent,
+          helpCopy: helpCopy.textContent
+        };
+      }
+
+      function sendNetworkState(force) {
+        if (networkRole !== "host" || !remoteConnection || !remoteConnection.open) return;
+        const now = performance.now();
+        if (!force && now - lastNetworkSync < 34) return;
+        lastNetworkSync = now;
+        try {
+          remoteConnection.send({ type: "state", state: serializeNetworkState() });
+        } catch (error) {
+          setNetworkStatus(`Could not sync the game: ${error.message || "connection error"}`);
+        }
+      }
+
+      function sendNetworkMessage(message) {
+        if (!remoteConnection || !remoteConnection.open) {
+          setNetworkStatus("The other player is not connected.");
+          return false;
+        }
+        try {
+          remoteConnection.send(message);
+          return true;
+        } catch (error) {
+          setNetworkStatus(`Could not send your move: ${error.message || "connection error"}`);
+          return false;
+        }
+      }
+
+      function applyNetworkState(state) {
+        if (!state || !Array.isArray(state.balls) || state.balls.length !== 16 ||
+            !state.balls.every(ball => Number.isInteger(ball.number) &&
+              Number.isFinite(ball.x) && Number.isFinite(ball.y) &&
+              Number.isFinite(ball.vx) && Number.isFinite(ball.vy))) return;
+        const width = table.right - table.left;
+        const height = table.bottom - table.top;
+        const byNumber = new Map(state.balls.map(ball => [ball.number, ball]));
+        if (byNumber.size !== 16 || !byNumber.has(0)) return;
+        for (const ball of balls) {
+          const source = byNumber.get(ball.number);
+          if (!source) return;
+          ball.x = table.left + source.x * width;
+          ball.y = table.top + source.y * height;
+          ball.vx = source.vx * width;
+          ball.vy = source.vy * height;
+          ball.angle = Number.isFinite(source.angle) ? source.angle : ball.angle;
+          ball.spinX = Number.isFinite(source.spinX) ? source.spinX : 0;
+          ball.spinY = Number.isFinite(source.spinY) ? source.spinY : 0;
+          ball.inPlay = !!source.inPlay;
+          ball.sunk = !!source.sunk;
+          ball.pocketing = source.pocketing && source.pocketing.from && source.pocketing.to
+            ? {
+              fromX: table.left + source.pocketing.from.x * width,
+              fromY: table.top + source.pocketing.from.y * height,
+              x: table.left + source.pocketing.to.x * width,
+              y: table.top + source.pocketing.to.y * height,
+              t: clamp(source.pocketing.t, 0, 1)
+            }
+            : null;
+        }
+        cueBall = balls.find(ball => ball.isCue);
+        if (Array.isArray(state.playerNames) && state.playerNames.length === 2) {
+          onlineNames[0] = normalizePlayerName(state.playerNames[0], 0);
+          onlineNames[1] = networkRole === "guest"
+            ? playerNames[1]
+            : normalizePlayerName(state.playerNames[1], 1);
+        }
+        groups = Array.isArray(state.groups) && state.groups.length === 2 ? state.groups.slice() : groups;
+        currentPlayer = state.currentPlayer === 1 ? 1 : 0;
+        gameOver = !!state.gameOver;
+        gameResult = state.gameResult && typeof state.gameResult.winner === "string"
+          ? {
+            winner: Number.isInteger(state.gameResult.winnerIndex)
+              ? onlineNames[state.gameResult.winnerIndex === 1 ? 1 : 0]
+              : state.gameResult.winner,
+            winnerIndex: Number.isInteger(state.gameResult.winnerIndex) ? state.gameResult.winnerIndex : null,
+            won: !!state.gameResult.won
+          }
+          : null;
+        breakShot = !!state.breakShot;
+        ballsMoving = !!state.ballsMoving;
+        ballInHand = state.ballInHand && Number.isInteger(state.ballInHand.player)
+          ? { player: state.ballInHand.player === 1 ? 1 : 0, behindHead: !!state.ballInHand.behindHead }
+          : null;
+        shotPots = Array.isArray(state.shotPots) ? state.shotPots.filter(Number.isInteger) : [];
+        firstContact = Number.isInteger(state.firstContact) ? state.firstContact : null;
+        shotGroupRemaining = Number.isFinite(state.shotGroupRemaining) ? state.shotGroupRemaining : 0;
+        railAfterContact = !!state.railAfterContact;
+        cueScratch = !!state.cueScratch;
+        statusText.textContent = typeof state.status === "string" ? state.status : "";
+        helpTitle.textContent = typeof state.helpTitle === "string" ? state.helpTitle : "";
+        helpCopy.textContent = typeof state.helpCopy === "string" ? state.helpCopy : "";
+        renderReturnTray();
+        updateScoreboard();
+
+        const resultKey = gameResult ? `${gameResult.winnerIndex}:${gameResult.winner}:${gameResult.won}` : null;
+        if (gameOver && gameResult && resultKey !== appliedRemoteResult) {
+          appliedRemoteResult = resultKey;
+          closeNetworkModal();
+          showGameOver(gameResult.winner, gameResult.won, gameResult.winnerIndex === localPlayer);
+        } else if (!gameOver) {
+          appliedRemoteResult = null;
+          hideGameOver();
+        }
+      }
+
+      function handleHostMessage(message) {
+        if (!message || typeof message !== "object") return;
+        if (message.type === "name" && typeof message.name === "string") {
+          onlineNames[1] = normalizePlayerName(message.name, 1);
+          updateScoreboard();
+          sendNetworkState(true);
+        } else if (message.type === "shot") {
+          const direction = message.direction;
+          const shotPower = Number(message.power);
+          if (currentPlayer !== 1 || !direction ||
+              !Number.isFinite(direction.x) || !Number.isFinite(direction.y) ||
+              !Number.isFinite(shotPower) || ballsMoving || gameOver || ballInHand) {
+            sendNetworkState(true);
+            return;
+          }
+          const remoteSpin = message.spin && Number.isFinite(message.spin.x) && Number.isFinite(message.spin.y)
+            ? { x: clamp(message.spin.x, -1, 1), y: clamp(message.spin.y, -1, 1) }
+            : { x: 0, y: 0 };
+          startShot(direction, clamp(shotPower, .05, 1), false, true, remoteSpin);
+        } else if (message.type === "place-cue") {
+          const point = message.point;
+          if (currentPlayer !== 1 || !ballInHand || !point ||
+              !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+            sendNetworkState(true);
+            return;
+          }
+          const x = table.left + point.x * (table.right - table.left);
+          const y = table.top + point.y * (table.bottom - table.top);
+          if (!canPlaceCue(x, y, ballInHand.behindHead)) {
+            sendNetworkState(true);
+            return;
+          }
+          cueBall.x = x;
+          cueBall.y = y;
+          cueBall.vx = 0;
+          cueBall.vy = 0;
+          cueBall.inPlay = true;
+          ballInHand = null;
+          placement = null;
+          setStatus("Cue ball placed. Take your shot.", "Ball placed", "Click the table to shoot, or drag back from the cue ball.");
+          updateScoreboard();
+          sendNetworkState(true);
+        } else if (message.type === "reset") {
+          resetGame();
+        }
+      }
+
+      function bindRemoteConnection(connection, host) {
+        remoteConnection = connection;
+        connection.on("open", () => {
+          remoteConnected = true;
+          clearTimeout(connectionTimeout);
+          networkRole = host ? "host" : "guest";
+          localPlayer = host ? 0 : 1;
+          onlineNames = playerNames.slice();
+          if (!host) gameMode = "network";
+          roomShare.hidden = !host;
+          roomCodeText.textContent = roomCode;
+          setNetworkStatus("Connected. The host controls the game and sends each turn.");
+          updateScoreboard();
+          setStatus(host ? `Friend connected. ${currentName(0)} breaks.` : "Connected to the host. Wait for your turn.", "Online match", "The host runs the game; your moves sync with your friend.");
+          if (host) sendNetworkState(true);
+          else sendNetworkMessage({ type: "name", name: onlineNames[1] });
+        });
+        connection.on("data", message => {
+          if (host) handleHostMessage(message);
+          else if (message && message.type === "state") applyNetworkState(message.state);
+        });
+        connection.on("close", () => {
+          if (remoteConnection !== connection) return;
+          remoteConnection = null;
+          remoteConnected = false;
+          if (host) {
+            setNetworkStatus("Friend disconnected. Share the same room code to reconnect.");
+          } else {
+            setNetworkStatus("The host disconnected.");
+            leaveOnlineRoom(true);
+          }
+          updateScoreboard();
+        });
+        connection.on("error", error => {
+          setNetworkStatus(`Connection error: ${error.message || "unable to connect"}`);
+        });
+      }
+
+      let connectionTimeout = 0;
+
+      async function createOnlineRoom() {
+        if (networkRole) {
+          setNetworkStatus("Leave the current room before creating another.");
+          return;
+        }
+        hostOnlineButton.disabled = true;
+        joinOnlineButton.disabled = true;
+        setNetworkStatus("Loading the free connection service...");
+        try {
+          const Peer = await loadPeerLibrary();
+          previousGameMode = gameMode;
+          roomCode = makeRoomCode();
+          roomShare.hidden = true;
+          const peer = new Peer(roomPeerId(roomCode), { debug: 0 });
+          peerInstance = peer;
+          peer.on("open", () => {
+            networkRole = "host";
+            localPlayer = 0;
+            gameMode = "network";
+            onlineNames = playerNames.slice();
+            resetGame();
+            roomCodeText.textContent = roomCode;
+            roomShare.hidden = false;
+            setNetworkStatus("Room is ready. Share the code with one friend.");
+            setStatus("Waiting for your friend to join.", "Online room ready", `Share the room code. ${currentName(0)} breaks when your friend connects.`);
+            updateScoreboard();
+            if (remoteConnection && remoteConnection.open) sendNetworkState(true);
+          });
+          peer.on("connection", connection => {
+            if (remoteConnection) {
+              connection.close();
+              return;
+            }
+            bindRemoteConnection(connection, true);
+          });
+          peer.on("error", error => {
+            const message = error.type === "unavailable-id"
+              ? "That room code is already in use. Create a new room."
+              : error.message || "Could not connect to the free signaling service.";
+            setNetworkStatus(message);
+            if (!networkRole) {
+              peerInstance = null;
+              peer.destroy();
+            }
+            hostOnlineButton.disabled = false;
+            joinOnlineButton.disabled = false;
+          });
+        } catch (error) {
+          setNetworkStatus(error.message);
+          hostOnlineButton.disabled = false;
+          joinOnlineButton.disabled = false;
+        }
+      }
+
+      async function joinOnlineRoom() {
+        if (networkRole) {
+          setNetworkStatus("Leave the current room before joining another.");
+          return;
+        }
+        const code = normalizeRoomCode(roomCodeInput.value);
+        if (code.length < 6) {
+          setNetworkStatus("Enter the full room code shared by the host.");
+          return;
+        }
+        hostOnlineButton.disabled = true;
+        joinOnlineButton.disabled = true;
+        setNetworkStatus("Connecting to the room...");
+        try {
+          const Peer = await loadPeerLibrary();
+          previousGameMode = gameMode;
+          roomCode = code;
+          const peer = new Peer({ debug: 0 });
+          peerInstance = peer;
+          peer.on("open", () => {
+            const connection = peer.connect(roomPeerId(code), { reliable: true });
+            bindRemoteConnection(connection, false);
+            connectionTimeout = window.setTimeout(() => {
+              if (!remoteConnected) {
+                setNetworkStatus("Room not found or host is offline. Check the code and try again.");
+                connection.close();
+                hostOnlineButton.disabled = false;
+                joinOnlineButton.disabled = false;
+              }
+            }, 12000);
+          });
+          peer.on("error", error => {
+            setNetworkStatus(error.message || "Could not connect to the free signaling service.");
+            hostOnlineButton.disabled = false;
+            joinOnlineButton.disabled = false;
+          });
+        } catch (error) {
+          setNetworkStatus(error.message);
+          hostOnlineButton.disabled = false;
+          joinOnlineButton.disabled = false;
+        }
+      }
+
+      function leaveOnlineRoom(resetLocalGame) {
+        clearTimeout(connectionTimeout);
+        const connection = remoteConnection;
+        remoteConnection = null;
+        remoteConnected = false;
+        if (connection && connection.open) connection.close();
+        if (peerInstance) {
+          peerInstance.destroy();
+          peerInstance = null;
+        }
+        networkRole = null;
+        localPlayer = null;
+        roomCode = "";
+        roomShare.hidden = true;
+        gameMode = previousGameMode;
+        closeNetworkModal();
+        if (resetLocalGame) resetGame();
+        else {
+          updateScoreboard();
+          setStatus("Online match ended. Start a local game or create another room.", "Back to the table", "Click the table to shoot, or drag back from the cue ball.");
+        }
+        hostOnlineButton.disabled = false;
+        joinOnlineButton.disabled = false;
+        disconnectOnlineButton.hidden = true;
+      }
+
+      function updatePower(value, fromSlider) {
+        power = Math.max(0, Math.min(1, value));
+        if (fromSlider) powerSlider.value = String(Math.round(power * 100));
+        const percent = Math.round(power * 100);
+        powerValue.textContent = `${percent}%`;
+        powerFill.style.width = `${percent}%`;
+      }
+
+      function updateCueSpin(x, y) {
+        const magnitude = Math.hypot(x, y);
+        const scale = magnitude > 1 ? 1 / magnitude : 1;
+        cueSpin = { x: x * scale, y: y * scale };
+        spinDot.style.left = `${50 + cueSpin.x * 36}%`;
+        spinDot.style.top = `${50 - cueSpin.y * 36}%`;
+        const follow = Math.round(cueSpin.y * 100);
+        const side = Math.round(cueSpin.x * 100);
+        const vertical = follow > 5 ? `Follow ${follow}%` : follow < -5 ? `Draw ${Math.abs(follow)}%` : "Center";
+        spinHint.textContent = vertical.toUpperCase();
+        spinPad.setAttribute("aria-label", `Cue ball spin control. ${vertical}; side spin ${side}%. Arrow keys adjust spin.`);
+      }
+
+      function resizeCanvas() {
+        const rect = stage.getBoundingClientRect();
+        const oldBounds = { left: table.left, right: table.right, top: table.top, bottom: table.bottom };
+        const hadTable = table.right > table.left && table.bottom > table.top;
+        dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        deviceSize.width = rect.width;
+        deviceSize.height = rect.height;
+        canvas.width = Math.max(1, Math.round(rect.width * dpr));
+        canvas.height = Math.max(1, Math.round(rect.height * dpr));
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const margin = Math.min(30, rect.width * 0.045);
+        const tableWidth = Math.max(150, Math.min(rect.width - margin * 2, (rect.height - 34) * 2.04));
+        const tableHeight = tableWidth * 0.5;
+        table.x = (rect.width - tableWidth) / 2;
+        table.y = (rect.height - tableHeight) / 2 + 4;
+        table.width = tableWidth;
+        table.height = tableHeight;
+        table.radius = Math.max(6, Math.min(13, tableWidth / 76));
+        table.rail = Math.max(table.radius * 2, tableWidth * 0.043);
+        table.left = table.x + table.rail;
+        table.right = table.x + table.width - table.rail;
+        table.top = table.y + table.rail;
+        table.bottom = table.y + table.height - table.rail;
+        table.headString = table.left + (table.right - table.left) * 0.25;
+        table.footSpotX = table.left + (table.right - table.left) * 0.75;
+        table.pockets = [
+          { x: table.left, y: table.top },
+          { x: (table.left + table.right) / 2, y: table.top },
+          { x: table.right, y: table.top },
+          { x: table.left, y: table.bottom },
+          { x: (table.left + table.right) / 2, y: table.bottom },
+          { x: table.right, y: table.bottom }
+        ];
+        table.jaws = [];
+        for (const pocket of table.pockets) {
+          const insetX = pocket.x === table.left ? 1 : pocket.x === table.right ? -1 : 0;
+          const insetY = pocket.y === table.top ? 1 : pocket.y === table.bottom ? -1 : 0;
+          const directions = [];
+          if (insetX) directions.push({ x: 0, y: -1 }, { x: 0, y: 1 });
+          if (insetY) directions.push({ x: -1, y: 0 }, { x: 1, y: 0 });
+          for (const direction of directions) {
+            table.jaws.push({
+              x: pocket.x + direction.x * table.radius * 1.72 + insetX * table.radius * .28,
+              y: pocket.y + direction.y * table.radius * 1.72 + insetY * table.radius * .28,
+              radius: table.radius * .42
+            });
+          }
+        }
+
+        if (balls.length && hadTable) {
+          const scaleX = (table.right - table.left) / (oldBounds.right - oldBounds.left);
+          const scaleY = (table.bottom - table.top) / (oldBounds.bottom - oldBounds.top);
+          const before = balls.map(ball => ({
+            ball,
+            nx: (ball.x - oldBounds.left) / (oldBounds.right - oldBounds.left),
+            ny: (ball.y - oldBounds.top) / (oldBounds.bottom - oldBounds.top)
+          }));
+          for (const point of before) {
+            point.ball.x = clamp(table.left + point.nx * (table.right - table.left), table.left + table.radius, table.right - table.radius);
+            point.ball.y = clamp(table.top + point.ny * (table.bottom - table.top), table.top + table.radius, table.bottom - table.radius);
+            point.ball.vx *= scaleX;
+            point.ball.vy *= scaleY;
+            if (point.ball.pocketing) {
+              point.ball.pocketing.fromX = table.left + ((point.ball.pocketing.fromX - oldBounds.left) / (oldBounds.right - oldBounds.left)) * (table.right - table.left);
+              point.ball.pocketing.fromY = table.top + ((point.ball.pocketing.fromY - oldBounds.top) / (oldBounds.bottom - oldBounds.top)) * (table.bottom - table.top);
+              point.ball.pocketing.x = table.left + ((point.ball.pocketing.x - oldBounds.left) / (oldBounds.right - oldBounds.left)) * (table.right - table.left);
+              point.ball.pocketing.y = table.top + ((point.ball.pocketing.y - oldBounds.top) / (oldBounds.bottom - oldBounds.top)) * (table.bottom - table.top);
+            }
+          }
+          if (!ballsMoving) resolveOverlaps();
+        }
+        draw();
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function makeFeltPattern() {
+        const tile = document.createElement("canvas");
+        tile.width = 96;
+        tile.height = 96;
+        const patternContext = tile.getContext("2d");
+        const image = patternContext.createImageData(tile.width, tile.height);
+        for (let i = 0; i < image.data.length; i += 4) {
+          const grain = Math.random() > .5 ? 255 : 0;
+          image.data[i] = grain;
+          image.data[i + 1] = grain;
+          image.data[i + 2] = grain;
+          image.data[i + 3] = 18;
+        }
+        patternContext.putImageData(image, 0, 0);
+        return ctx.createPattern(tile, "repeat");
+      }
+
+      function roundedRect(x, y, width, height, radius) {
+        const r = Math.min(radius, width / 2, height / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + width, y, x + width, y + height, r);
+        ctx.arcTo(x + width, y + height, x, y + height, r);
+        ctx.arcTo(x, y + height, x, y, r);
+        ctx.arcTo(x, y, x + width, y, r);
+        ctx.closePath();
+      }
+
+      function drawTable() {
+        const { x, y, width, height, rail } = table;
+        ctx.save();
+        ctx.shadowColor = "rgba(0, 0, 0, .56)";
+        ctx.shadowBlur = Math.max(12, width * .025);
+        ctx.shadowOffsetY = Math.max(7, width * .012);
+        const wood = ctx.createLinearGradient(x, y, x + width, y + height);
+        wood.addColorStop(0, "#3d2118");
+        wood.addColorStop(.18, "#70432a");
+        wood.addColorStop(.5, "#4e2c1e");
+        wood.addColorStop(.83, "#765039");
+        wood.addColorStop(1, "#351d16");
+        roundedRect(x, y, width, height, rail * .72);
+        ctx.fillStyle = wood;
+        ctx.fill();
+        ctx.restore();
+
+        const innerWood = ctx.createLinearGradient(x, y, x, y + height);
+        innerWood.addColorStop(0, "#a27345");
+        innerWood.addColorStop(.45, "#71472e");
+        innerWood.addColorStop(1, "#45271b");
+        roundedRect(x + rail * .15, y + rail * .15, width - rail * .3, height - rail * .3, rail * .58);
+        ctx.fillStyle = innerWood;
+        ctx.fill();
+
+        ctx.save();
+        roundedRect(table.left, table.top, table.right - table.left, table.bottom - table.top, rail * .12);
+        ctx.clip();
+        const felt = ctx.createRadialGradient(
+          table.left + (table.right - table.left) * .43,
+          table.top + (table.bottom - table.top) * .42,
+          4,
+          table.left + (table.right - table.left) * .5,
+          table.top + (table.bottom - table.top) * .5,
+          table.width * .7
+        );
+        felt.addColorStop(0, "#17804d");
+        felt.addColorStop(.55, "#106b40");
+        felt.addColorStop(1, "#09472f");
+        ctx.fillStyle = felt;
+        ctx.fillRect(table.left, table.top, table.right - table.left, table.bottom - table.top);
+        const shade = ctx.createLinearGradient(0, table.top, 0, table.bottom);
+        shade.addColorStop(0, "rgba(226, 255, 215, .065)");
+        shade.addColorStop(.45, "rgba(0, 0, 0, 0)");
+        shade.addColorStop(1, "rgba(0, 0, 0, .13)");
+        ctx.fillStyle = shade;
+        ctx.fillRect(table.left, table.top, table.right - table.left, table.bottom - table.top);
+        if (!feltPattern) feltPattern = makeFeltPattern();
+        if (feltPattern) {
+          ctx.globalAlpha = .075;
+          ctx.fillStyle = feltPattern;
+          ctx.fillRect(table.left, table.top, table.right - table.left, table.bottom - table.top);
+          ctx.globalAlpha = 1;
+        }
+
+        ctx.strokeStyle = "rgba(223, 237, 208, .6)";
+        ctx.lineWidth = Math.max(1, table.radius * .105);
+        ctx.beginPath();
+        ctx.moveTo(table.headString, table.top + table.radius * 1.7);
+        ctx.lineTo(table.headString, table.bottom - table.radius * 1.7);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(table.headString, (table.top + table.bottom) / 2, (table.bottom - table.top) * .17, -Math.PI / 2, Math.PI / 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(table.footSpotX, (table.top + table.bottom) / 2, Math.max(2, table.radius * .19), 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(245, 240, 218, .92)";
+        ctx.fill();
+        ctx.restore();
+
+        drawRailDetails();
+        drawPockets();
+        drawBrass();
+      }
+
+      function drawRailDetails() {
+        const { x, y, width, height, rail, left, right, top, bottom } = table;
+        const band = Math.max(2, rail * .11);
+        const shine = ctx.createLinearGradient(0, y, 0, y + height);
+        shine.addColorStop(0, "rgba(255, 223, 163, .22)");
+        shine.addColorStop(.2, "rgba(255, 223, 163, .04)");
+        shine.addColorStop(.78, "rgba(0, 0, 0, .06)");
+        shine.addColorStop(1, "rgba(0, 0, 0, .26)");
+        ctx.strokeStyle = shine;
+        ctx.lineWidth = band;
+        roundedRect(x + rail * .48, y + rail * .48, width - rail * .96, height - rail * .96, rail * .34);
+        ctx.stroke();
+
+        const markerColor = "rgba(225, 203, 151, .82)";
+        for (let i = 1; i <= 6; i++) {
+          const px = left + (right - left) * i / 7;
+          drawDiamond(px, y + rail * .5, table.radius * .23, markerColor);
+          drawDiamond(px, y + height - rail * .5, table.radius * .23, markerColor);
+        }
+        for (let i = 1; i <= 3; i++) {
+          const py = top + (bottom - top) * i / 4;
+          drawDiamond(x + rail * .5, py, table.radius * .2, markerColor);
+          drawDiamond(x + width - rail * .5, py, table.radius * .2, markerColor);
+        }
+        drawCushions();
+      }
+
+      function drawCushions() {
+        const r = table.radius;
+        const midX = (table.left + table.right) / 2;
+        const gap = r * 2.15;
+        ctx.save();
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "rgba(5, 43, 29, .72)";
+        ctx.lineWidth = Math.max(2, r * .34);
+        for (const y of [table.top + r * .12, table.bottom - r * .12]) {
+          ctx.beginPath();
+          ctx.moveTo(table.left + gap, y);
+          ctx.lineTo(midX - gap, y);
+          ctx.moveTo(midX + gap, y);
+          ctx.lineTo(table.right - gap, y);
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.moveTo(table.left + r * .12, table.top + gap);
+        ctx.lineTo(table.left + r * .12, table.bottom - gap);
+        ctx.moveTo(table.right - r * .12, table.top + gap);
+        ctx.lineTo(table.right - r * .12, table.bottom - gap);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawDiamond(x, y, size, color) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillStyle = color;
+        ctx.fillRect(-size * .72, -size * .72, size * 1.44, size * 1.44);
+        ctx.restore();
+      }
+
+      function drawPockets() {
+        for (let i = 0; i < table.pockets.length; i++) {
+          const pocket = table.pockets[i];
+          const isSide = i === 1 || i === 4;
+          const r = table.radius * (isSide ? 1.9 : 1.68);
+          ctx.save();
+          ctx.shadowColor = "rgba(0, 0, 0, .8)";
+          ctx.shadowBlur = r * .8;
+          ctx.beginPath();
+          ctx.arc(pocket.x, pocket.y, r * 1.06, 0, Math.PI * 2);
+          const rim = ctx.createRadialGradient(pocket.x - r * .3, pocket.y - r * .35, r * .15, pocket.x, pocket.y, r * 1.2);
+          rim.addColorStop(0, "#090c0a");
+          rim.addColorStop(.7, "#030504");
+          rim.addColorStop(1, "#221812");
+          ctx.fillStyle = rim;
+          ctx.fill();
+          ctx.restore();
+
+          ctx.beginPath();
+          ctx.arc(pocket.x, pocket.y, r * .78, 0, Math.PI * 2);
+          const hole = ctx.createRadialGradient(pocket.x - r * .18, pocket.y - r * .3, r * .05, pocket.x, pocket.y, r);
+          hole.addColorStop(0, "#020303");
+          hole.addColorStop(.72, "#060807");
+          hole.addColorStop(1, "#16110d");
+          ctx.fillStyle = hole;
+          ctx.fill();
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(pocket.x, pocket.y, r * .74, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.strokeStyle = "rgba(133, 87, 50, .14)";
+          ctx.lineWidth = Math.max(.45, table.radius * .045);
+          for (let net = -2; net <= 2; net++) {
+            ctx.beginPath();
+            ctx.moveTo(pocket.x - r, pocket.y + net * r * .31);
+            ctx.lineTo(pocket.x + r, pocket.y + (net - 1) * r * .31);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(pocket.x - r, pocket.y + net * r * .31);
+            ctx.lineTo(pocket.x + r, pocket.y + (net + 1) * r * .31);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+      }
+
+      function drawBrass() {
+        const { x, y, width, height, rail } = table;
+        const plate = ctx.createLinearGradient(x, y, x + rail, y + rail);
+        plate.addColorStop(0, "#efd68e");
+        plate.addColorStop(.45, "#b9904d");
+        plate.addColorStop(1, "#65451f");
+        for (const sx of [1, -1]) {
+          for (const sy of [1, -1]) {
+            const cornerX = sx > 0 ? x : x + width;
+            const cornerY = sy > 0 ? y : y + height;
+            ctx.beginPath();
+            ctx.moveTo(cornerX, cornerY);
+            ctx.lineTo(cornerX + sx * rail * .55, cornerY);
+            ctx.lineTo(cornerX + sx * rail * .34, cornerY + sy * rail * .34);
+            ctx.lineTo(cornerX, cornerY + sy * rail * .55);
+            ctx.closePath();
+            ctx.fillStyle = plate;
+            ctx.fill();
+            ctx.strokeStyle = "rgba(248, 220, 147, .45)";
+            ctx.lineWidth = .7;
+            ctx.stroke();
+          }
+        }
+        const spots = [
+          [x + rail * .38, y + rail * .38],
+          [x + width - rail * .38, y + rail * .38],
+          [x + rail * .38, y + height - rail * .38],
+          [x + width - rail * .38, y + height - rail * .38]
+        ];
+        for (const [px, py] of spots) {
+          const r = Math.max(2.2, table.radius * .29);
+          const metal = ctx.createRadialGradient(px - r * .35, py - r * .35, .2, px, py, r);
+          metal.addColorStop(0, "#f2d991");
+          metal.addColorStop(.55, "#bd9551");
+          metal.addColorStop(1, "#6a4b29");
+          ctx.beginPath();
+          ctx.arc(px, py, r, 0, Math.PI * 2);
+          ctx.fillStyle = metal;
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(px - r * .15, py - r * .18, r * .24, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255, 242, 194, .75)";
+          ctx.fill();
+        }
+      }
+
+      function drawBall(ball, alpha, scale) {
+        if (scale <= .025) return;
+        const r = table.radius * scale;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(ball.x, ball.y);
+
+        ctx.beginPath();
+        ctx.ellipse(r * .17, r * .43, r * .94, r * .49, 0, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0, 0, 0, .32)";
+        ctx.fill();
+
+        ctx.rotate(ball.angle || 0);
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.save();
+        ctx.clip();
+        const base = ball.isCue ? "#faf9f2" : (ball.number >= 9 ? "#f5f3e9" : COLORS[ball.number]);
+        const sphere = ctx.createRadialGradient(-r * .34, -r * .42, r * .03, r * .18, r * .18, r * 1.2);
+        sphere.addColorStop(0, ball.isCue ? "#fff" : lighten(base, .48));
+        sphere.addColorStop(.32, base);
+        sphere.addColorStop(.78, darken(base, .15));
+        sphere.addColorStop(1, darken(base, .55));
+        ctx.fillStyle = sphere;
+        ctx.fillRect(-r, -r, r * 2, r * 2);
+
+        if (!ball.isCue && ball.number >= 9) {
+          ctx.fillStyle = COLORS[ball.number];
+          ctx.fillRect(-r * 1.05, -r * .34, r * 2.1, r * .68);
+          const stripeShade = ctx.createLinearGradient(0, -r * .34, 0, r * .34);
+          stripeShade.addColorStop(0, "rgba(255,255,255,.07)");
+          stripeShade.addColorStop(.5, "rgba(0,0,0,0)");
+          stripeShade.addColorStop(1, "rgba(0,0,0,.19)");
+          ctx.fillStyle = stripeShade;
+          ctx.fillRect(-r, -r * .34, r * 2, r * .68);
+        }
+
+        ctx.beginPath();
+        ctx.ellipse(-r * .31, -r * .46, r * .2, r * .105, -.65, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,.62)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(-r * .19, -r * .52, r * .075, r * .04, -.65, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,.8)";
+        ctx.fill();
+
+        if (!ball.isCue) {
+          const disc = r * .49;
+          ctx.beginPath();
+          ctx.arc(0, 0, disc, 0, Math.PI * 2);
+          ctx.fillStyle = "#fffdf4";
+          ctx.fill();
+          ctx.strokeStyle = "rgba(21, 21, 17, .24)";
+          ctx.lineWidth = Math.max(.45, r * .045);
+          ctx.stroke();
+          ctx.fillStyle = "#181916";
+          ctx.font = `800 ${Math.max(7, r * .73)}px Arial, sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(String(ball.number), 0, r * .018);
+        } else {
+          ctx.beginPath();
+          ctx.arc(r * .23, r * .22, Math.max(1.2, r * .075), 0, Math.PI * 2);
+          ctx.fillStyle = "#b94c43";
+          ctx.fill();
+        }
+
+        const edge = ctx.createRadialGradient(-r * .1, -r * .1, r * .42, 0, 0, r * 1.03);
+        edge.addColorStop(.55, "rgba(0,0,0,0)");
+        edge.addColorStop(1, "rgba(0,0,0,.37)");
+        ctx.fillStyle = edge;
+        ctx.fillRect(-r, -r, r * 2, r * 2);
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255,255,255,.17)";
+        ctx.lineWidth = Math.max(.5, r * .045);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function lighten(hex, amount) {
+        return adjustColor(hex, amount);
+      }
+
+      function darken(hex, amount) {
+        return adjustColor(hex, -amount);
+      }
+
+      function adjustColor(hex, amount) {
+        const raw = hex.replace("#", "");
+        const values = [0, 2, 4].map(i => parseInt(raw.slice(i, i + 2), 16));
+        const adjusted = values.map(value => Math.round(amount >= 0
+          ? value + (255 - value) * amount
+          : value * (1 + amount)));
+        return `rgb(${adjusted[0]}, ${adjusted[1]}, ${adjusted[2]})`;
+      }
+
+      function cuePositionForAim() {
+        const strikeProgress = cueStrike ? clamp((performance.now() - cueStrike.started) / 60, 0, 1) : 0;
+        const pull = cueStrike
+          ? (1 - strikeProgress) * table.radius * 1.1 - strikeProgress * table.radius * .55
+          : stroke && stroke.active ? stroke.pull : power * table.radius * 5.2;
+        const length = table.radius * 8 + pull;
+        const direction = cueStrike ? cueStrike.direction : displayAim;
+        const centerX = cueStrike ? cueStrike.x : cueBall.x;
+        const centerY = cueStrike ? cueStrike.y : cueBall.y;
+        return {
+          tipX: centerX - direction.x * (table.radius * 1.13 + pull),
+          tipY: centerY - direction.y * (table.radius * 1.13 + pull),
+          buttX: centerX - direction.x * (table.radius * 1.13 + pull + length),
+          buttY: centerY - direction.y * (table.radius * 1.13 + pull + length)
+        };
+      }
+
+      function drawCue() {
+        if (cueStrike && performance.now() - cueStrike.started >= 60) cueStrike = null;
+        if (!cueStrike && (!cueBall || !cueBall.inPlay || ballsMoving || gameOver || ballInHand || !canLocalAct())) return;
+        if (cueStrike && gameOver) return;
+        const points = cuePositionForAim();
+        const dx = points.buttX - points.tipX;
+        const dy = points.buttY - points.tipY;
+        const length = Math.hypot(dx, dy);
+        const nx = -dy / length;
+        const ny = dx / length;
+        const thick = Math.max(2.2, table.radius * .24);
+        const tipWidth = Math.max(1.2, thick * .43);
+        const wood = ctx.createLinearGradient(points.tipX, points.tipY, points.buttX, points.buttY);
+        wood.addColorStop(0, "#d4b17b");
+        wood.addColorStop(.12, "#d9bd8f");
+        wood.addColorStop(.18, "#98683e");
+        wood.addColorStop(.88, "#754426");
+        wood.addColorStop(1, "#38231a");
+        ctx.save();
+        ctx.globalAlpha = cueStrike
+          ? .94 * (1 - clamp((performance.now() - cueStrike.started) / 60, 0, 1))
+          : .94;
+        ctx.beginPath();
+        ctx.moveTo(points.tipX + nx * tipWidth / 2, points.tipY + ny * tipWidth / 2);
+        ctx.lineTo(points.buttX + nx * thick / 2, points.buttY + ny * thick / 2);
+        ctx.lineTo(points.buttX - nx * thick / 2, points.buttY - ny * thick / 2);
+        ctx.lineTo(points.tipX - nx * tipWidth / 2, points.tipY - ny * tipWidth / 2);
+        ctx.closePath();
+        ctx.fillStyle = wood;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255, 235, 190, .35)";
+        ctx.lineWidth = .55;
+        ctx.stroke();
+        const ux = dx / length;
+        const uy = dy / length;
+        ctx.beginPath();
+        ctx.moveTo(points.tipX + ux * tipWidth * .95, points.tipY + uy * tipWidth * .95);
+        ctx.lineTo(points.tipX + ux * tipWidth * 2.25, points.tipY + uy * tipWidth * 2.25);
+        ctx.strokeStyle = "#b9b9ae";
+        ctx.lineWidth = Math.max(1.2, tipWidth * .72);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(points.tipX - nx * tipWidth * .6, points.tipY - ny * tipWidth * .6);
+        ctx.lineTo(points.tipX + nx * tipWidth * .6, points.tipY + ny * tipWidth * .6);
+        ctx.strokeStyle = "#5ba2ce";
+        ctx.lineWidth = Math.max(1.5, tipWidth * 1.5);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function rayPrediction() {
+        if (!cueBall || !cueBall.inPlay) return null;
+        const r = table.radius;
+        let closest = Infinity;
+        let target = null;
+        let ghost = null;
+        for (const ball of balls) {
+          if (!ball.inPlay || ball.isCue) continue;
+          const dx = ball.x - cueBall.x;
+          const dy = ball.y - cueBall.y;
+          const along = dx * displayAim.x + dy * displayAim.y;
+          if (along <= 0) continue;
+          const across = Math.abs(dx * displayAim.y - dy * displayAim.x);
+          if (across > r * 2) continue;
+          const entry = along - Math.sqrt(Math.max(0, r * r * 4 - across * across));
+          if (entry >= 0 && entry < closest) {
+            closest = entry;
+            target = ball;
+            ghost = { x: cueBall.x + displayAim.x * entry, y: cueBall.y + displayAim.y * entry };
+          }
+        }
+        if (target) {
+          const nx = target.x - ghost.x;
+          const ny = target.y - ghost.y;
+          const nLength = Math.hypot(nx, ny) || 1;
+          return {
+            distance: closest, target, ghost,
+            tangent: { x: nx / nLength, y: ny / nLength },
+            legal: isLegalTarget(target)
+          };
+        }
+
+        const limits = [
+          displayAim.x > 0 ? (table.right - r - cueBall.x) / displayAim.x : displayAim.x < 0 ? (table.left + r - cueBall.x) / displayAim.x : Infinity,
+          displayAim.y > 0 ? (table.bottom - r - cueBall.y) / displayAim.y : displayAim.y < 0 ? (table.top + r - cueBall.y) / displayAim.y : Infinity
+        ];
+        const distance = Math.min(...limits.filter(value => value >= 0));
+        return Number.isFinite(distance) ? { distance, target: null, ghost: null, tangent: null } : null;
+      }
+
+      function isLegalTarget(ball) {
+        const group = groups[currentPlayer];
+        if (ball.number === 8) return breakShot || (!!group && countRemaining(group) === 0);
+        return !group || groupFor(ball.number) === group;
+      }
+
+      function drawLegalHighlights() {
+        if (ballsMoving || gameOver) return;
+        const group = groups[currentPlayer];
+        for (const ball of balls) {
+          if (!ball.inPlay || ball.isCue || !isLegalTarget(ball)) continue;
+          const eightReady = ball.number === 8;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(ball.x, ball.y, table.radius * (eightReady ? 1.48 : 1.28), 0, Math.PI * 2);
+          ctx.strokeStyle = group
+            ? "rgba(248, 207, 116, .64)"
+            : "rgba(244, 241, 220, .28)";
+          ctx.lineWidth = Math.max(1.1, table.radius * .11);
+          ctx.shadowColor = group ? "rgba(245, 193, 81, .58)" : "rgba(255, 246, 209, .2)";
+          ctx.shadowBlur = table.radius * (eightReady ? 1.3 : .65);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      function drawAimGuide() {
+        if (!cueBall || !cueBall.inPlay || ballsMoving || gameOver || ballInHand || !canLocalAct()) return null;
+        const prediction = rayPrediction();
+        if (!prediction) return null;
+        const r = table.radius;
+        const alpha = stroke && stroke.active ? .38 : .68;
+        const lineColor = prediction.target && !prediction.legal
+          ? `rgba(255, 81, 72, ${alpha})`
+          : `rgba(255, 247, 215, ${alpha})`;
+        const ghostColor = prediction.target && !prediction.legal
+          ? "rgba(255, 92, 82, .9)"
+          : "rgba(255, 248, 219, .84)";
+        ctx.save();
+        ctx.setLineDash([Math.max(3, r * .44), Math.max(3, r * .48)]);
+        ctx.lineWidth = Math.max(1, r * .095);
+        ctx.strokeStyle = lineColor;
+        ctx.beginPath();
+        ctx.moveTo(cueBall.x, cueBall.y);
+        if (prediction.target) ctx.lineTo(prediction.ghost.x, prediction.ghost.y);
+        else ctx.lineTo(cueBall.x + displayAim.x * prediction.distance, cueBall.y + displayAim.y * prediction.distance);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (prediction.target) {
+          ctx.beginPath();
+          ctx.arc(prediction.ghost.x, prediction.ghost.y, r * .91, 0, Math.PI * 2);
+          ctx.strokeStyle = ghostColor;
+          ctx.lineWidth = Math.max(1, r * .11);
+          ctx.stroke();
+
+          const previewPower = stroke && stroke.active
+            ? clamp(stroke.pull / (r * 8), 0, 1)
+            : power;
+          const tangentLength = r * (1.4 + previewPower * 6);
+          ctx.beginPath();
+          ctx.moveTo(prediction.target.x, prediction.target.y);
+          ctx.lineTo(
+            prediction.target.x + prediction.tangent.x * tangentLength,
+            prediction.target.y + prediction.tangent.y * tangentLength
+          );
+          ctx.strokeStyle = "rgba(255, 228, 155, .72)";
+          ctx.lineWidth = Math.max(1, r * .12);
+          ctx.stroke();
+
+          const projection = displayAim.x * prediction.tangent.x + displayAim.y * prediction.tangent.y;
+          let tangentX = displayAim.x - prediction.tangent.x * projection;
+          let tangentY = displayAim.y - prediction.tangent.y * projection;
+          const tangentMagnitude = Math.hypot(tangentX, tangentY);
+          if (tangentMagnitude > .08) {
+            tangentX /= tangentMagnitude;
+            tangentY /= tangentMagnitude;
+            ctx.beginPath();
+            ctx.moveTo(prediction.ghost.x, prediction.ghost.y);
+            ctx.lineTo(
+              prediction.ghost.x + tangentX * r * 2.5,
+              prediction.ghost.y + tangentY * r * 2.5
+            );
+            ctx.strokeStyle = "rgba(174, 218, 243, .76)";
+            ctx.lineWidth = Math.max(1, r * .1);
+            ctx.stroke();
+          }
+        } else {
+          const hitX = cueBall.x + displayAim.x * prediction.distance;
+          const hitY = cueBall.y + displayAim.y * prediction.distance;
+          ctx.beginPath();
+          ctx.arc(hitX, hitY, r * .75, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(255, 248, 219, .45)";
+          ctx.lineWidth = Math.max(1, r * .09);
+          ctx.stroke();
+        }
+        ctx.restore();
+        return prediction;
+      }
+
+      function drawFoulTargetWarning(prediction) {
+        if (!prediction || !prediction.target || prediction.legal) return;
+        const r = table.radius;
+        const x = prediction.target.x;
+        const y = prediction.target.y - r * 1.7;
+        const iconRadius = Math.max(5, r * .62);
+        const labelY = clamp(y - r * .9, table.top + 10, table.bottom - 8);
+        ctx.save();
+        ctx.shadowColor = "rgba(219, 44, 37, .8)";
+        ctx.shadowBlur = r * .8;
+        ctx.beginPath();
+        ctx.arc(prediction.target.x, prediction.target.y, r * 1.28, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255, 75, 66, .86)";
+        ctx.lineWidth = Math.max(1.3, r * .12);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, iconRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = "#ff554b";
+        ctx.lineWidth = Math.max(1.6, r * .16);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x - iconRadius * .72, y + iconRadius * .72);
+        ctx.lineTo(x + iconRadius * .72, y - iconRadius * .72);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#ff7468";
+        ctx.font = `900 ${Math.max(7, r * .56)}px Arial, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("FOUL TARGET", clamp(x, table.left + 35, table.right - 35), labelY);
+        ctx.restore();
+      }
+
+      function draw() {
+        const width = deviceSize.width;
+        const height = deviceSize.height;
+        if (!width || !height) return;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+        drawTable();
+        drawCue();
+        const prediction = drawAimGuide();
+        drawLegalHighlights();
+        for (const ball of balls) {
+          const cuePreviewing = ball.isCue && ballInHand && placement && placement.preview;
+          if (ball.inPlay && !cuePreviewing) drawBall(ball, ballInHand ? .74 : 1, 1);
+          if (ball.pocketing) {
+            const t = Math.min(1, ball.pocketing.t);
+            const eased = 1 - Math.pow(1 - t, 3);
+            const x = ball.pocketing.fromX + (ball.pocketing.x - ball.pocketing.fromX) * eased;
+            const y = ball.pocketing.fromY + (ball.pocketing.y - ball.pocketing.fromY) * eased;
+            const scale = 1 - eased * .97;
+            drawBall({ ...ball, x, y }, 1 - eased * .9, scale);
+          }
+        }
+        if (ballInHand && placement && placement.preview) {
+          const valid = placement.valid;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(placement.preview.x, placement.preview.y, table.radius * 1.35, 0, Math.PI * 2);
+          ctx.strokeStyle = valid ? "rgba(205, 244, 194, .85)" : "rgba(255, 115, 93, .9)";
+          ctx.setLineDash([4, 4]);
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          ctx.restore();
+          drawBall({ ...cueBall, x: placement.preview.x, y: placement.preview.y }, valid ? .88 : .43, 1);
+        }
+        drawFoulTargetWarning(prediction);
+      }
+
+      function createBall(number, x, y, isCue) {
+        return {
+          number, x, y, vx: 0, vy: 0, angle: 0, spinX: 0, spinY: 0, isCue: !!isCue,
+          inPlay: true, pocketing: null, sunk: false
+        };
+      }
+
+      function rackBalls() {
+        balls = [];
+        const radius = table.radius;
+        cueBall = createBall(0, table.left + (table.right - table.left) * .19, (table.top + table.bottom) / 2, true);
+        balls.push(cueBall);
+
+        const rack = [1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 8, 7, 15];
+        const rowSpacing = radius * 2.035;
+        const colSpacing = radius * 2.05;
+        const apexX = table.footSpotX;
+        const centerY = (table.top + table.bottom) / 2;
+        let index = 0;
+        for (let row = 0; row < 5; row++) {
+          for (let col = 0; col <= row; col++) {
+            const ball = createBall(
+              rack[index++],
+              apexX + row * rowSpacing * .866,
+              centerY + (col - row / 2) * colSpacing,
+              false
+            );
+            balls.push(ball);
+          }
+        }
+      }
+
+      function resetGame() {
+        if (networkRole === "guest") {
+          sendNetworkMessage({ type: "reset" });
+          return;
+        }
+        clearTimeout(aiTimer);
+        hideGameOver();
+        groups = [null, null];
+        currentPlayer = 0;
+        gameOver = false;
+        gameResult = null;
+        appliedRemoteResult = null;
+        breakShot = true;
+        ballsMoving = false;
+        ballInHand = null;
+        shotPots = [];
+        firstContact = null;
+        shotGroupRemaining = 0;
+        railAfterContact = false;
+        cueScratch = false;
+        stroke = null;
+        cueStrike = null;
+        updateCueSpin(0, 0);
+        placement = null;
+        accumulator = 0;
+        aim = { x: 1, y: 0 };
+        displayAim = { x: 1, y: 0 };
+        rackBalls();
+        renderReturnTray();
+        setStatus(`${currentName(currentPlayer)} breaks. Click the table to shoot.`, "Click to aim and shoot", "Drag back for power. Use ←/→ for 0.1° aim; drag the spin dot for follow or draw.");
+        updateScoreboard();
+        draw();
+        sendNetworkState(true);
+      }
+
+      function canPlaceCue(x, y, behindHead) {
+        const r = table.radius;
+        if (x < table.left + r || x > table.right - r || y < table.top + r || y > table.bottom - r) return false;
+        if (behindHead && x > table.headString - r * .1) return false;
+        if (table.pockets.some(pocket => Math.hypot(pocket.x - x, pocket.y - y) < r * 1.55)) return false;
+        for (const ball of balls) {
+          if (!ball.inPlay || ball.isCue) continue;
+          if (Math.hypot(ball.x - x, ball.y - y) < r * 2.08) return false;
+        }
+        return true;
+      }
+
+      function startShot(direction, shotPower, computerShot = false, remoteShot = false, shotSpin = cueSpin) {
+        if (ballsMoving || gameOver || ballInHand ||
+            (!computerShot && !remoteShot && !canLocalAct()) ||
+            (networkRole === "guest" && !remoteShot) || !cueBall.inPlay) return false;
+        const length = Math.hypot(direction.x, direction.y);
+        if (length < .001) return false;
+        aim = { x: direction.x / length, y: direction.y / length };
+        displayAim = { x: aim.x, y: aim.y };
+        cueBall.spinX = clamp(shotSpin.x, -1, 1);
+        cueBall.spinY = clamp(shotSpin.y, -1, 1);
+        cueStrike = { x: cueBall.x, y: cueBall.y, direction: { ...aim }, started: performance.now() };
+        const normalizedPower = clamp(shotPower, .05, 1);
+        const speed = 180 + normalizedPower * 940;
+        cueBall.vx = aim.x * speed;
+        cueBall.vy = aim.y * speed;
+        ballsMoving = true;
+        stroke = null;
+        shotPots = [];
+        firstContact = null;
+        shotGroupRemaining = groups[currentPlayer] ? countRemaining(groups[currentPlayer]) : 0;
+        railAfterContact = false;
+        cueScratch = false;
+        accumulator = 0;
+        playSound("cue", normalizedPower);
+        setStatus(`${currentName(currentPlayer)} is at the table.`, "Shot in motion", "Balls are rolling. The next turn begins when they stop.");
+        updateScoreboard();
+        sendNetworkState(true);
+        return true;
+      }
+
+      function submitShot(direction, shotPower) {
+        if (networkRole === "guest") {
+          if (currentPlayer !== localPlayer || ballsMoving || gameOver || ballInHand) return;
+          sendNetworkMessage({ type: "shot", direction, power: shotPower, spin: { ...cueSpin } });
+          return;
+        }
+        startShot(direction, shotPower);
+      }
+
+      function shootWithSelectedPower() {
+        if (!cueBall || !cueBall.inPlay || gameOver || ballsMoving || ballInHand || !canLocalAct()) return;
+        submitShot(aim, power);
+      }
+
+      function startPocketAnimation(ball, pocket) {
+        ball.inPlay = false;
+        ball.vx = 0;
+        ball.vy = 0;
+        ball.pocketing = { fromX: ball.x, fromY: ball.y, x: pocket.x, y: pocket.y, t: 0 };
+        if (ball.isCue) {
+          cueScratch = true;
+        } else {
+          shotPots.push(ball.number);
+        }
+        if (firstContact !== null) railAfterContact = true;
+        playSound("pocket", .65);
+      }
+
+      function nearestPocket(ball) {
+        let nearest = null;
+        let distance = Infinity;
+        for (const pocket of table.pockets) {
+          const d = Math.hypot(ball.x - pocket.x, ball.y - pocket.y);
+          if (d < distance) {
+            nearest = pocket;
+            distance = d;
+          }
+        }
+        return { pocket: nearest, distance };
+      }
+
+      function hasPocketOnEdge(ball, edge) {
+        for (let index = 0; index < table.pockets.length; index++) {
+          const pocket = table.pockets[index];
+          const onEdge = edge === "left" ? Math.abs(pocket.x - table.left) < 1 :
+            edge === "right" ? Math.abs(pocket.x - table.right) < 1 :
+              edge === "top" ? Math.abs(pocket.y - table.top) < 1 : Math.abs(pocket.y - table.bottom) < 1;
+          if (onEdge) {
+            const sidePocket = index === 1 || index === 4;
+            const opening = table.radius * (sidePocket ? 2.2 : 2.05);
+            const along = edge === "left" || edge === "right"
+              ? Math.abs(ball.y - pocket.y)
+              : Math.abs(ball.x - pocket.x);
+            if (along < opening) return true;
+          }
+        }
+        return false;
+      }
+
+      function collideCushions(ball) {
+        const r = table.radius;
+        const restitution = .82;
+        let hit = false;
+        if (ball.x < table.left + r && !hasPocketOnEdge(ball, "left")) {
+          ball.x = table.left + r;
+          ball.vx = Math.abs(ball.vx) * restitution;
+          hit = true;
+        } else if (ball.x > table.right - r && !hasPocketOnEdge(ball, "right")) {
+          ball.x = table.right - r;
+          ball.vx = -Math.abs(ball.vx) * restitution;
+          hit = true;
+        }
+        if (ball.y < table.top + r && !hasPocketOnEdge(ball, "top")) {
+          ball.y = table.top + r;
+          ball.vy = Math.abs(ball.vy) * restitution;
+          hit = true;
+        } else if (ball.y > table.bottom - r && !hasPocketOnEdge(ball, "bottom")) {
+          ball.y = table.bottom - r;
+          ball.vy = -Math.abs(ball.vy) * restitution;
+          hit = true;
+        }
+        if (hit) {
+          if (firstContact !== null) railAfterContact = true;
+          playSound("rail", Math.min(1, Math.hypot(ball.vx, ball.vy) / 900));
+        }
+      }
+
+      function collidePocketJaws(ball) {
+        let hit = false;
+        for (const jaw of table.jaws) {
+          const dx = ball.x - jaw.x;
+          const dy = ball.y - jaw.y;
+          const distance = Math.hypot(dx, dy);
+          const minDistance = table.radius + jaw.radius;
+          if (distance >= minDistance || distance < .001) continue;
+          const nx = dx / distance;
+          const ny = dy / distance;
+          ball.x = jaw.x + nx * minDistance;
+          ball.y = jaw.y + ny * minDistance;
+          const normalVelocity = ball.vx * nx + ball.vy * ny;
+          if (normalVelocity < 0) {
+            ball.vx -= 1.78 * normalVelocity * nx;
+            ball.vy -= 1.78 * normalVelocity * ny;
+            hit = true;
+          }
+        }
+        if (hit) {
+          if (firstContact !== null) railAfterContact = true;
+          playSound("rail", Math.min(1, Math.hypot(ball.vx, ball.vy) / 900));
+        }
+      }
+
+      function resolveBallPair(a, b) {
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const minDistance = table.radius * 2;
+        const distanceSquared = dx * dx + dy * dy;
+        if (distanceSquared >= minDistance * minDistance || distanceSquared < .000001) return false;
+        const distance = Math.sqrt(distanceSquared);
+        const nx = dx / distance;
+        const ny = dy / distance;
+        const overlap = minDistance - distance;
+        a.x -= nx * (overlap * .5 + .01);
+        a.y -= ny * (overlap * .5 + .01);
+        b.x += nx * (overlap * .5 + .01);
+        b.y += ny * (overlap * .5 + .01);
+
+        const relativeX = b.vx - a.vx;
+        const relativeY = b.vy - a.vy;
+        const normalVelocity = relativeX * nx + relativeY * ny;
+        if (normalVelocity >= 0) return false;
+
+        if ((a.isCue && firstContact === null) || (b.isCue && firstContact === null)) {
+          firstContact = a.isCue ? b.number : a.number;
+        }
+
+        // Equal-mass balls exchange their normal velocity components; tangential motion is preserved.
+        const tangentX = -ny;
+        const tangentY = nx;
+        const aNormal = a.vx * nx + a.vy * ny;
+        const bNormal = b.vx * nx + b.vy * ny;
+        const aTangent = a.vx * tangentX + a.vy * tangentY;
+        const bTangent = b.vx * tangentX + b.vy * tangentY;
+        const newANormal = ((1 - RESTITUTION) * aNormal + (1 + RESTITUTION) * bNormal) / 2;
+        const newBNormal = ((1 + RESTITUTION) * aNormal + (1 - RESTITUTION) * bNormal) / 2;
+        a.vx = newANormal * nx + aTangent * tangentX;
+        a.vy = newANormal * ny + aTangent * tangentY;
+        b.vx = newBNormal * nx + bTangent * tangentX;
+        b.vy = newBNormal * ny + bTangent * tangentY;
+        if (a.isCue || b.isCue) {
+          const cue = a.isCue ? a : b;
+          cue.vx += aim.x * cue.spinY * 115 - aim.y * cue.spinX * 78;
+          cue.vy += aim.y * cue.spinY * 115 + aim.x * cue.spinX * 78;
+          cue.spinX *= .35;
+          cue.spinY *= .35;
+        }
+
+        const impact = Math.abs(normalVelocity);
+        if (impact > 36) playSound("ball", Math.min(1, impact / 850));
+        return true;
+      }
+
+      function resolveOverlaps() {
+        for (let pass = 0; pass < 5; pass++) {
+          for (let i = 0; i < balls.length; i++) {
+            if (!balls[i].inPlay) continue;
+            for (let j = i + 1; j < balls.length; j++) {
+              if (!balls[j].inPlay) continue;
+              const a = balls[i];
+              const b = balls[j];
+              const dx = b.x - a.x;
+              const dy = b.y - a.y;
+              const distance = Math.hypot(dx, dy);
+              const min = table.radius * 2.02;
+              if (distance > .001 && distance < min) {
+                const shift = (min - distance) * .5;
+                a.x -= dx / distance * shift;
+                a.y -= dy / distance * shift;
+                b.x += dx / distance * shift;
+                b.y += dy / distance * shift;
+              }
+            }
+          }
+        }
+      }
+
+      function physicsStep(dt) {
+        const movingBalls = balls.filter(ball => ball.inPlay && !ball.pocketing);
+        for (const ball of movingBalls) {
+          ball.x += ball.vx * dt;
+          ball.y += ball.vy * dt;
+          ball.angle += Math.hypot(ball.vx, ball.vy) * dt / table.radius;
+
+          const { pocket, distance } = nearestPocket(ball);
+          const pocketIndex = table.pockets.indexOf(pocket);
+          const isSidePocket = pocketIndex === 1 || pocketIndex === 4;
+          const captureRadius = table.radius * (isSidePocket ? 2.2 : 2.05);
+          if (distance < captureRadius) {
+            startPocketAnimation(ball, pocket);
+            continue;
+          }
+          if (distance < table.radius * 3.1) {
+            const pull = (1 - distance / (table.radius * 3.1)) * 118;
+            const inv = 1 / Math.max(distance, .001);
+            ball.vx += (pocket.x - ball.x) * inv * pull * dt;
+            ball.vy += (pocket.y - ball.y) * inv * pull * dt;
+          }
+
+          collidePocketJaws(ball);
+          collideCushions(ball);
+        }
+
+        const live = balls.filter(ball => ball.inPlay && !ball.pocketing);
+        for (let pass = 0; pass < 2; pass++) {
+          for (let i = 0; i < live.length; i++) {
+            for (let j = i + 1; j < live.length; j++) resolveBallPair(live[i], live[j]);
+          }
+        }
+
+        for (const ball of live) {
+          const speed = Math.hypot(ball.vx, ball.vy);
+          if (speed <= STOP_SPEED) {
+            ball.vx = 0;
+            ball.vy = 0;
+          } else {
+            const nextSpeed = Math.max(0, speed - ROLLING_FRICTION * dt);
+            const scale = nextSpeed / speed;
+            ball.vx *= scale;
+            ball.vy *= scale;
+          }
+        }
+      }
+
+      function updateAnimations(dt) {
+        let trayChanged = false;
+        for (const ball of balls) {
+          if (!ball.pocketing) continue;
+          ball.pocketing.t += dt / .28;
+          if (ball.pocketing.t >= 1) {
+            ball.pocketing.t = 1;
+            ball.sunk = true;
+            ball.pocketing = null;
+            trayChanged = true;
+          }
+        }
+        if (trayChanged) renderReturnTray();
+      }
+
+      function motionRemains() {
+        if (balls.some(ball => ball.pocketing)) return true;
+        return balls.some(ball => ball.inPlay && Math.hypot(ball.vx, ball.vy) > 0);
+      }
+
+      function countRemaining(group) {
+        return balls.filter(ball => ball.inPlay && !ball.isCue && groupFor(ball.number) === group).length;
+      }
+
+      function placeCueAfterFoul(behindHead) {
+        const startX = behindHead ? table.left + (table.headString - table.left) * .55 : table.left + (table.right - table.left) * .2;
+        const centerY = (table.top + table.bottom) / 2;
+        const candidates = [];
+        for (let ring = 0; ring < 10; ring++) {
+          for (let step = 0; step < 32; step++) {
+            const angle = step * Math.PI / 16;
+            const x = startX + Math.cos(angle) * ring * table.radius * 2;
+            const y = centerY + Math.sin(angle) * ring * table.radius * 2;
+            if (canPlaceCue(x, y, behindHead)) {
+              candidates.push({ x, y, score: Math.hypot(x - startX, y - centerY) });
+            }
+          }
+          if (candidates.length) break;
+        }
+        const spot = candidates[0] || { x: table.left + table.radius * 2, y: centerY };
+        cueBall.inPlay = true;
+        cueBall.pocketing = null;
+        cueBall.sunk = false;
+        cueBall.x = spot.x;
+        cueBall.y = spot.y;
+        cueBall.vx = 0;
+        cueBall.vy = 0;
+        ballInHand = { player: currentPlayer, behindHead };
+        placement = { preview: { x: spot.x, y: spot.y }, valid: true };
+      }
+
+      function respotEightBall() {
+        const eight = balls.find(ball => ball.number === 8);
+        if (!eight) return;
+        const spots = [];
+        const centerY = (table.top + table.bottom) / 2;
+        for (let ring = 0; ring < 16; ring++) {
+          for (let step = 0; step < 40; step++) {
+            const angle = step * Math.PI / 20;
+            const x = table.footSpotX + Math.cos(angle) * ring * table.radius * 1.5;
+            const y = centerY + Math.sin(angle) * ring * table.radius * 1.5;
+            if (x < table.left + table.radius || x > table.right - table.radius ||
+                y < table.top + table.radius || y > table.bottom - table.radius) continue;
+            const clear = balls.every(ball => ball === eight || !ball.inPlay ||
+              Math.hypot(ball.x - x, ball.y - y) > table.radius * 2.05);
+            if (clear) spots.push({ x, y, distance: Math.hypot(x - table.footSpotX, y - centerY) });
+          }
+          if (spots.length) break;
+        }
+        spots.sort((a, b) => a.distance - b.distance);
+        const spot = spots[0] || { x: table.footSpotX, y: centerY };
+        eight.inPlay = true;
+        eight.pocketing = null;
+        eight.sunk = false;
+        eight.x = spot.x;
+        eight.y = spot.y;
+        eight.vx = 0;
+        eight.vy = 0;
+      }
+
+      function finishShot() {
+        ballsMoving = false;
+        accumulator = 0;
+        const shooter = currentPlayer;
+        const pottedEight = shotPots.includes(8);
+        const group = groups[shooter];
+        // Group eligibility is captured at shot start so pocketed balls cannot retroactively legalize the 8.
+        const legalFirstContact = firstContact !== null &&
+          (breakShot ||
+            (!group && firstContact !== 8) ||
+            (group && shotGroupRemaining === 0 && firstContact === 8) ||
+            (group && shotGroupRemaining > 0 && groupFor(firstContact) === group));
+        const noRailOrPot = firstContact !== null && !railAfterContact && shotPots.length === 0;
+        const foul = cueScratch || !legalFirstContact || noRailOrPot;
+        const wasBreak = breakShot;
+        const breakEightSpotted = pottedEight && wasBreak;
+        const legalEight = !wasBreak && !!group && shotGroupRemaining === 0 &&
+          firstContact === 8 && !cueScratch;
+
+        if (pottedEight && wasBreak) {
+          respotEightBall();
+        } else if (pottedEight && !legalEight) {
+          gameOver = true;
+          const winner = currentName(1 - shooter);
+          gameResult = { winner, winnerIndex: 1 - shooter, won: false };
+          closeNetworkModal();
+          setStatus(`${winner} wins — the 8-ball was pocketed illegally.`, "Game over", "Pocket the 8-ball only after clearing your group.");
+          updateScoreboard();
+          showGameOver(winner, false);
+          sendNetworkState(true);
+          return;
+        } else if (pottedEight) {
+          gameOver = true;
+          const winner = currentName(shooter);
+          gameResult = { winner, winnerIndex: shooter, won: true };
+          closeNetworkModal();
+          setStatus(`${winner} wins! The 8-ball is down.`, "Game over", "Nicely played. Start a new game for another round.");
+          updateScoreboard();
+          showGameOver(winner, true);
+          sendNetworkState(true);
+          return;
+        }
+
+        if (foul) {
+          currentPlayer = 1 - shooter;
+          if (cueScratch) placeCueAfterFoul(wasBreak);
+          else {
+            ballInHand = { player: currentPlayer, behindHead: false };
+            placement = null;
+          }
+          const foulReason = cueScratch ? "Scratch" : firstContact === null ? "No ball hit" :
+            !legalFirstContact ? "Wrong first contact" : "No ball reached a rail";
+          setStatus(
+            `${breakEightSpotted ? "8-ball spotted on the break. " : ""}${foulReason} — ${currentName(currentPlayer)} has ball-in-hand.`,
+            breakEightSpotted ? "8-ball spotted on break" : "Foul",
+            breakEightSpotted ? "The 8-ball was returned to the table; the incoming player has ball-in-hand." : "Drag the cue ball to a clear spot, then take your shot."
+          );
+        } else {
+          const pottedObjects = shotPots.filter(number => number !== 8);
+          let assignedGroup = null;
+          if (!wasBreak && !group && pottedObjects.length) {
+            assignedGroup = groupFor(pottedObjects[0]);
+            if (assignedGroup) {
+              groups[shooter] = assignedGroup;
+              groups[1 - shooter] = assignedGroup === "solids" ? "stripes" : "solids";
+            }
+          }
+
+          const ownPotted = shotPots.some(number => groupFor(number) && groupFor(number) === groups[shooter]);
+          const keepTurn = wasBreak ? pottedObjects.length > 0 : ownPotted;
+          if (!keepTurn) currentPlayer = 1 - shooter;
+          ballInHand = null;
+          placement = null;
+          const eightReady = groups[currentPlayer] && countRemaining(groups[currentPlayer]) === 0;
+          setStatus(
+            breakEightSpotted
+              ? `8-ball spotted on the break. ${assignedGroup
+                ? `${assignedGroup === "solids" ? "Solids" : "Stripes"} assigned to ${currentName(shooter)}.`
+                : eightReady ? `${currentName(currentPlayer)} is on the 8-ball for the win!`
+                  : keepTurn ? `${currentName(shooter)} shoots again.` : `${currentName(currentPlayer)} is up.`}`
+              : assignedGroup
+              ? `${assignedGroup === "solids" ? "Solids" : "Stripes"} assigned to ${currentName(shooter)}.`
+              : eightReady ? `${currentName(currentPlayer)} is on the 8-ball for the win!`
+              : keepTurn ? `${currentName(shooter)} potted a ball and shoots again.` : `No foul. ${currentName(currentPlayer)} is up.`,
+            breakEightSpotted ? "8-ball spotted on break"
+              : assignedGroup ? `${assignedGroup === "solids" ? "Solids" : "Stripes"} Assigned!`
+              : eightReady ? "8-Ball for the Win!" : keepTurn ? "Stay at the table" : "Turn changed",
+            breakEightSpotted ? "The 8-ball was returned to the table after the break."
+              : eightReady ? "Pocket the black 8-ball cleanly to win the match."
+              : keepTurn ? "Keep clearing your group, then pocket the 8-ball."
+              : "Click the table to shoot, or drag back from the cue ball."
+          );
+        }
+
+        breakShot = false;
+        shotPots = [];
+        firstContact = null;
+        railAfterContact = false;
+        cueScratch = false;
+        stroke = null;
+        updateScoreboard();
+        draw();
+        sendNetworkState(true);
+        if (isAiTurn()) scheduleAi();
+      }
+
+      function update(dt) {
+        updateAnimations(dt);
+        if (!ballsMoving) return;
+        accumulator += Math.min(dt, .05);
+        let steps = 0;
+        while (accumulator >= STEP && steps < 8) {
+          physicsStep(STEP);
+          accumulator -= STEP;
+          steps++;
+        }
+        if (!motionRemains() && networkRole !== "guest") finishShot();
+      }
+
+      function smoothAim(dt) {
+        const blend = 1 - Math.exp(-dt * 18);
+        const x = displayAim.x + (aim.x - displayAim.x) * blend;
+        const y = displayAim.y + (aim.y - displayAim.y) * blend;
+        const length = Math.hypot(x, y);
+        if (length > .001) displayAim = { x: x / length, y: y / length };
+      }
+
+      function playSound(kind, strength) {
+        if (muted) return;
+        const now = performance.now();
+        if (kind === "ball" && now - lastSoundTime < 38) return;
+        if (kind === "ball") lastSoundTime = now;
+        try {
+          if (!audioContext) {
+            const AudioCtor = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtor) return;
+            audioContext = new AudioCtor();
+          }
+          if (audioContext.state === "suspended") audioContext.resume();
+          const time = audioContext.currentTime;
+          const oscillator = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          const amount = Math.max(.08, Math.min(1, strength));
+          let startFrequency = 220;
+          let endFrequency = 90;
+          let duration = .09;
+          let type = "sine";
+          if (kind === "cue") {
+            startFrequency = 175 + amount * 60;
+            endFrequency = 70;
+            duration = .12;
+            type = "triangle";
+          } else if (kind === "ball") {
+            startFrequency = 340 + amount * 250;
+            endFrequency = 130;
+            duration = .055;
+            type = "triangle";
+          } else if (kind === "rail") {
+            startFrequency = 115 + amount * 75;
+            endFrequency = 58;
+            duration = .075;
+            type = "sine";
+          } else if (kind === "pocket") {
+            startFrequency = 260;
+            endFrequency = 62;
+            duration = .19;
+            type = "sine";
+          } else if (kind === "win") {
+            startFrequency = 520;
+            endFrequency = 880;
+            duration = .42;
+            type = "triangle";
+          } else if (kind === "loss") {
+            startFrequency = 240;
+            endFrequency = 95;
+            duration = .38;
+            type = "sine";
+          }
+          oscillator.type = type;
+          oscillator.frequency.setValueAtTime(startFrequency, time);
+          oscillator.frequency.exponentialRampToValueAtTime(Math.max(30, endFrequency), time + duration);
+          gain.gain.setValueAtTime(.0001, time);
+          gain.gain.exponentialRampToValueAtTime(.018 + amount * .055, time + .008);
+          gain.gain.exponentialRampToValueAtTime(.0001, time + duration);
+          oscillator.connect(gain);
+          gain.connect(audioContext.destination);
+          oscillator.start(time);
+          oscillator.stop(time + duration + .01);
+        } catch (error) {
+          console.warn("Audio playback is unavailable.", error);
+        }
+      }
+
+      function canvasPoint(event) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: (event.clientX - rect.left) * (deviceSize.width / rect.width),
+          y: (event.clientY - rect.top) * (deviceSize.height / rect.height)
+        };
+      }
+
+      function updateAim(point) {
+        if (!cueBall || !cueBall.inPlay) return;
+        const dx = point.x - cueBall.x;
+        const dy = point.y - cueBall.y;
+        const length = Math.hypot(dx, dy);
+        if (length > table.radius * .6) aim = { x: dx / length, y: dy / length };
+      }
+
+      function handlePointerDown(event) {
+        if (event.button !== 0 || gameOver || ballsMoving || !canLocalAct()) return;
+        canvas.focus({ preventScroll: true });
+        canvas.setPointerCapture(event.pointerId);
+        pointer = canvasPoint(event);
+        if (ballInHand) {
+          placement = { preview: { x: pointer.x, y: pointer.y }, valid: canPlaceCue(pointer.x, pointer.y, ballInHand.behindHead) };
+          draw();
+          return;
+        }
+
+        const nearCue = cueBall.inPlay && Math.hypot(pointer.x - cueBall.x, pointer.y - cueBall.y) < table.radius * 2.6;
+        if (nearCue) {
+          stroke = { active: true, pull: 0, origin: { x: pointer.x, y: pointer.y } };
+        } else {
+          updateAim(pointer);
+          stroke = { active: false, clickShot: true };
+        }
+        draw();
+      }
+
+      function handlePointerMove(event) {
+        pointer = canvasPoint(event);
+        if (ballInHand && placement) {
+          const valid = canPlaceCue(pointer.x, pointer.y, ballInHand.behindHead);
+          placement.preview = { x: pointer.x, y: pointer.y };
+          placement.valid = valid;
+          draw();
+          return;
+        }
+        if (stroke && stroke.active) {
+          const dx = cueBall.x - pointer.x;
+          const dy = cueBall.y - pointer.y;
+          const distance = Math.hypot(dx, dy);
+          if (distance > table.radius * .45) {
+            aim = { x: dx / distance, y: dy / distance };
+            stroke.pull = clamp(distance - table.radius * .7, 0, table.radius * 8);
+            updatePower(stroke.pull / (table.radius * 8), true);
+          }
+          draw();
+          return;
+        }
+        if (!ballsMoving && !gameOver && canLocalAct() && !ballInHand) {
+          updateAim(pointer);
+          draw();
+        }
+      }
+
+      function handlePointerUp(event) {
+        if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+        if (ballInHand && placement) {
+          if (placement.valid) {
+            if (networkRole === "guest") {
+              const x = placement.preview.x;
+              const y = placement.preview.y;
+              sendNetworkMessage({
+                type: "place-cue",
+                point: {
+                  x: (x - table.left) / (table.right - table.left),
+                  y: (y - table.top) / (table.bottom - table.top)
+                }
+              });
+              placement = null;
+              draw();
+              return;
+            }
+            cueBall.x = placement.preview.x;
+            cueBall.y = placement.preview.y;
+            cueBall.vx = 0;
+            cueBall.vy = 0;
+            cueBall.inPlay = true;
+            ballInHand = null;
+            placement = null;
+            setStatus("Cue ball placed. Take your shot.", "Ball placed", "Click the table to shoot, or drag back from the cue ball.");
+            updateScoreboard();
+            sendNetworkState(true);
+          }
+          draw();
+          return;
+        }
+        if (stroke && stroke.active) {
+          const pull = stroke.pull;
+          stroke = null;
+          if (pull > table.radius * .5) submitShot(aim, Math.max(.08, pull / (table.radius * 8)));
+          else draw();
+        } else if (stroke && stroke.clickShot) {
+          stroke = null;
+          shootWithSelectedPower();
+        }
+      }
+
+      function isPathClear(start, end, excludedBall) {
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const lengthSquared = dx * dx + dy * dy;
+        if (lengthSquared < .001) return true;
+        for (const ball of balls) {
+          if (!ball.inPlay || ball.isCue || ball === excludedBall) continue;
+          const projection = ((ball.x - start.x) * dx + (ball.y - start.y) * dy) / lengthSquared;
+          if (projection <= 0 || projection >= 1) continue;
+          const closestX = start.x + projection * dx;
+          const closestY = start.y + projection * dy;
+          if (Math.hypot(ball.x - closestX, ball.y - closestY) < table.radius * 1.95) return false;
+        }
+        return true;
+      }
+
+      function findAiShot() {
+        const ownGroup = groups[currentPlayer];
+        const targets = balls.filter(ball => ball.inPlay && !ball.isCue && ball.number !== 8 &&
+          (!ownGroup || groupFor(ball.number) === ownGroup));
+        const list = targets.length ? targets : balls.filter(ball => ball.inPlay && ball.number === 8);
+        if (!list.length) return { x: 1, y: 0, power: .65 };
+
+        let best = null;
+        for (const target of list) {
+          for (const pocket of table.pockets) {
+            const objectDx = pocket.x - target.x;
+            const objectDy = pocket.y - target.y;
+            const objectDistance = Math.hypot(objectDx, objectDy) || 1;
+            const nx = objectDx / objectDistance;
+            const ny = objectDy / objectDistance;
+            const ghostX = target.x - nx * table.radius * 2.04;
+            const ghostY = target.y - ny * table.radius * 2.04;
+            if (ghostX < table.left + table.radius || ghostX > table.right - table.radius ||
+                ghostY < table.top + table.radius || ghostY > table.bottom - table.radius) continue;
+            const clear = balls.every(ball => ball === target || ball === cueBall || !ball.inPlay ||
+              Math.hypot(ball.x - ghostX, ball.y - ghostY) > table.radius * 2.05);
+            if (!clear) continue;
+            const shotDx = ghostX - cueBall.x;
+            const shotDy = ghostY - cueBall.y;
+            const shotDistance = Math.hypot(shotDx, shotDy);
+            if (!isPathClear(cueBall, { x: ghostX, y: ghostY }, target)) continue;
+            const alignment = (shotDx * nx + shotDy * ny) / Math.max(1, shotDistance);
+            const score = shotDistance + objectDistance * .27 + (1 - alignment) * table.radius * 7;
+            if (!best || score < best.score) best = {
+              score,
+              aim: { x: shotDx / Math.max(1, shotDistance), y: shotDy / Math.max(1, shotDistance) },
+              power: clamp(.52 + shotDistance / (table.width * 3), .56, .86)
+            };
+          }
+        }
+        if (best) return { ...best.aim, power: best.power };
+        for (const target of list) {
+          const dx = target.x - cueBall.x;
+          const dy = target.y - cueBall.y;
+          const length = Math.hypot(dx, dy) || 1;
+          const ghostX = target.x - dx / length * table.radius * 2.04;
+          const ghostY = target.y - dy / length * table.radius * 2.04;
+          if (ghostX < table.left + table.radius || ghostX > table.right - table.radius ||
+              ghostY < table.top + table.radius || ghostY > table.bottom - table.radius) continue;
+          const clear = balls.every(ball => ball === target || ball === cueBall || !ball.inPlay ||
+            Math.hypot(ball.x - ghostX, ball.y - ghostY) > table.radius * 2.05);
+          if (!clear || !isPathClear(cueBall, { x: ghostX, y: ghostY }, target)) continue;
+          const shotX = ghostX - cueBall.x;
+          const shotY = ghostY - cueBall.y;
+          const shotLength = Math.hypot(shotX, shotY) || 1;
+          return { x: shotX / shotLength, y: shotY / shotLength, power: .72 };
+        }
+        const target = list[0];
+        const dx = target.x - cueBall.x;
+        const dy = target.y - cueBall.y;
+        const length = Math.hypot(dx, dy) || 1;
+        return { x: dx / length, y: dy / length, power: .72 };
+      }
+
+      function autoPlaceCueForAi() {
+        if (!ballInHand) return;
+        const behind = ballInHand.behindHead;
+        const startX = behind ? table.left + (table.headString - table.left) * .55 : table.left + table.radius * 2.5;
+        const centerY = (table.top + table.bottom) / 2;
+        for (let ring = 0; ring < 18; ring++) {
+          for (let step = 0; step < 48; step++) {
+            const angle = step * Math.PI / 24;
+            const x = startX + Math.cos(angle) * ring * table.radius * 1.65;
+            const y = centerY + Math.sin(angle) * ring * table.radius * 1.65;
+            if (canPlaceCue(x, y, behind)) {
+              cueBall.x = x;
+              cueBall.y = y;
+              cueBall.vx = 0;
+              cueBall.vy = 0;
+              cueBall.inPlay = true;
+              ballInHand = null;
+              placement = null;
+              return;
+            }
+          }
+        }
+      }
+
+      function scheduleAi() {
+        clearTimeout(aiTimer);
+        if (!isAiTurn() || gameOver) return;
+        aiTimer = window.setTimeout(() => {
+          if (!isAiTurn() || gameOver || ballsMoving) return;
+          autoPlaceCueForAi();
+          const plan = findAiShot();
+          setStatus(`${currentName(1)} is lining up a shot…`, `${currentName(1)} thinking`, `${currentName(1)} is choosing a shot.`);
+          updateScoreboard();
+          window.setTimeout(() => {
+            if (!isAiTurn() || gameOver || ballsMoving) return;
+            startShot(plan, plan.power, true, false, { x: 0, y: 0 });
+          }, 500);
+        }, 650);
+      }
+
+      canvas.addEventListener("pointerdown", handlePointerDown);
+      canvas.addEventListener("pointermove", handlePointerMove);
+      canvas.addEventListener("pointerup", handlePointerUp);
+      canvas.addEventListener("pointercancel", handlePointerUp);
+      canvas.addEventListener("contextmenu", event => event.preventDefault());
+      spinPad.addEventListener("pointerdown", event => {
+        spinPad.setPointerCapture(event.pointerId);
+        const rect = spinPad.getBoundingClientRect();
+        const x = (event.clientX - rect.left) / rect.width * 2 - 1;
+        const y = 1 - (event.clientY - rect.top) / rect.height * 2;
+        updateCueSpin(x, y);
+      });
+      spinPad.addEventListener("pointermove", event => {
+        if (!spinPad.hasPointerCapture(event.pointerId)) return;
+        const rect = spinPad.getBoundingClientRect();
+        const x = (event.clientX - rect.left) / rect.width * 2 - 1;
+        const y = 1 - (event.clientY - rect.top) / rect.height * 2;
+        updateCueSpin(x, y);
+      });
+      spinPad.addEventListener("pointerup", event => {
+        if (spinPad.hasPointerCapture(event.pointerId)) spinPad.releasePointerCapture(event.pointerId);
+      });
+      spinPad.addEventListener("pointercancel", event => {
+        if (spinPad.hasPointerCapture(event.pointerId)) spinPad.releasePointerCapture(event.pointerId);
+      });
+      powerSlider.addEventListener("input", () => {
+        updatePower(Number(powerSlider.value) / 100, false);
+        draw();
+      });
+      for (let i = 0; i < 2; i++) {
+        document.querySelector(`#playerName${i}`).addEventListener("click", openNamesModal);
+      }
+      namesForm.addEventListener("submit", saveNameEdits);
+      for (const input of nameInputs) input.addEventListener("input", () => input.setCustomValidity(""));
+      document.querySelector("#cancelNamesButton").addEventListener("click", closeNamesModal);
+      namesModal.addEventListener("click", event => {
+        if (event.target === namesModal) closeNamesModal();
+      });
+      namesModal.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeNamesModal();
+      });
+      document.querySelector("#newGameButton").addEventListener("click", resetGame);
+      document.querySelector("#playAgainButton").addEventListener("click", resetGame);
+      onlineButton.addEventListener("click", openNetworkModal);
+      hostOnlineButton.addEventListener("click", createOnlineRoom);
+      joinOnlineButton.addEventListener("click", joinOnlineRoom);
+      roomCodeInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") joinOnlineRoom();
+      });
+      document.querySelector("#closeNetworkButton").addEventListener("click", closeNetworkModal);
+      document.querySelector("#disconnectOnlineButton").addEventListener("click", () => leaveOnlineRoom(false));
+      document.querySelector("#copyRoomButton").addEventListener("click", () => {
+        if (!roomCode) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(roomCode).then(
+            () => setNetworkStatus("Room code copied. Send it to your friend."),
+            () => setNetworkStatus("Copy was blocked. Select and copy the room code manually.")
+          );
+        } else {
+          setNetworkStatus("Select the room code and copy it manually.");
+        }
+      });
+      networkModal.addEventListener("click", event => {
+        if (event.target === networkModal) closeNetworkModal();
+      });
+      modeButton.addEventListener("click", () => {
+        gameMode = gameMode === "local" ? "ai" : "local";
+        updateScoreboard();
+        if (isAiTurn() && !ballsMoving && !gameOver) scheduleAi();
+        else clearTimeout(aiTimer);
+      });
+      muteButton.addEventListener("click", () => {
+        muted = !muted;
+        updateScoreboard();
+        if (!muted) playSound("ball", .3);
+      });
+      window.addEventListener("keydown", event => {
+        if (event.target === spinPad && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+          event.preventDefault();
+          const step = event.shiftKey ? .25 : .1;
+          const x = cueSpin.x + (event.key === "ArrowRight" ? step : event.key === "ArrowLeft" ? -step : 0);
+          const y = cueSpin.y + (event.key === "ArrowUp" ? step : event.key === "ArrowDown" ? -step : 0);
+          updateCueSpin(x, y);
+        } else if ((event.key === "ArrowLeft" || event.key === "ArrowRight") &&
+            !event.repeat && !event.target.matches("input, button") &&
+            !ballsMoving && !gameOver && !ballInHand && canLocalAct()) {
+          event.preventDefault();
+          const angle = Math.atan2(aim.y, aim.x) + (event.key === "ArrowRight" ? 1 : -1) * Math.PI / 1800;
+          aim = { x: Math.cos(angle), y: Math.sin(angle) };
+        } else if (event.code === "Space" && !event.repeat && !event.target.matches("input, button")) {
+          event.preventDefault();
+          shootWithSelectedPower();
+        }
+      });
+      window.addEventListener("resize", resizeCanvas);
+      if ("ResizeObserver" in window) new ResizeObserver(resizeCanvas).observe(stage);
+
+      function frame(time) {
+        if (!previousTime) previousTime = time;
+        const dt = Math.min((time - previousTime) / 1000, .05);
+        previousTime = time;
+        smoothAim(dt);
+        update(dt);
+        if (networkRole === "host" && ballsMoving) sendNetworkState(false);
+        draw();
+        requestAnimationFrame(frame);
+      }
+
+      resizeCanvas();
+      resetGame();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
